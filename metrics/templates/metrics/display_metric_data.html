@@ -1,0 +1,14 @@
+<!-- templates/heart_rate_timeline.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ type }}</title>
+</head>
+<body>
+    {% if data %}
+    {{data}}
+    {% else %}
+    <a href="{% url 'user:authorize' %}">Sign In using Google</a>
+    {% endif %}
+</body>
+</html>
