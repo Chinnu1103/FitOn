@@ -50,4 +50,4 @@ def callback_google_fit(request):
             'scopes': credentials.scopes
         }
         
-    return redirect(reverse("metrics:get_heart_rate"))
+    return redirect(reverse("metrics:list_metrics"))
