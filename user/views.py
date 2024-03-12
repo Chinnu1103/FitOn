@@ -3,7 +3,19 @@ from django.urls import reverse
 from google_auth_oauthlib.flow import Flow
 from django.conf import settings
 
-SCOPES = ['https://www.googleapis.com/auth/fitness.activity.read']
+SCOPES = [
+    'https://www.googleapis.com/auth/fitness.activity.read', 
+    'https://www.googleapis.com/auth/fitness.body.read', 
+    'https://www.googleapis.com/auth/fitness.heart_rate.read', 
+    'https://www.googleapis.com/auth/fitness.sleep.read',
+    'https://www.googleapis.com/auth/fitness.blood_glucose.read',
+    'https://www.googleapis.com/auth/fitness.blood_pressure.read',
+    'https://www.googleapis.com/auth/fitness.body_temperature.read',
+    'https://www.googleapis.com/auth/fitness.location.read',
+    'https://www.googleapis.com/auth/fitness.nutrition.read',
+    'https://www.googleapis.com/auth/fitness.oxygen_saturation.read',
+    'https://www.googleapis.com/auth/fitness.reproductive_health.read'
+]
 
 def authorize_google_fit(request):
     credentials = request.session.get('google_fit_credentials')
@@ -21,11 +33,21 @@ def authorize_google_fit(request):
     return redirect(authorization_url)
 
 def callback_google_fit(request):
-    print("I am here")
     state = request.session['google_fit_state']
-    flow = Flow.from_client_secrets_file('client_secret.json', SCOPES, state=state)
-    flow.redirect_uri = request.build_absolute_uri(reverse('user:callback_google_fit'))
-    flow.fetch_token(authorization_response="http://127.0.0.1:8000")
-    request.session["google_fit_credentials"] = flow.credentials
-    print(flow.credentials)
-    redirect(reverse("metrics:heartrate"))
+    
+    if state:
+        flow = Flow.from_client_config(settings.GOOGLEFIT_CLIENT_CONFIG, SCOPES, state=state)
+        flow.redirect_uri = request.build_absolute_uri(reverse('user:callback_google_fit'))
+        flow.fetch_token(authorization_response = request.build_absolute_uri())
+        
+        credentials = flow.credentials
+        request.session['credentials'] = {
+            'token': credentials.token,
+            'refresh_token': credentials.refresh_token,
+            'token_uri': credentials.token_uri,
+            'client_id': credentials.client_id,
+            'client_secret': credentials.client_secret,
+            'scopes': credentials.scopes
+        }
+        
+    return redirect(reverse("metrics:list_metrics"))
