@@ -7,14 +7,15 @@ import time
 
 def get_heart_rate(request):
     # if request.user.is_authenticated:
-    credentials = authorize_google_fit(request)
-    service = build('fitness', 'v1', credentials=credentials)
+    # credentials = authorize_google_fit(request)
+    # service = build('fitness', 'v1', credentials=credentials)
     
-    data = service.users().dataset().aggregate(userId='me', body={
-        "aggregateBy": [{"dataTypeName": "com.google.heart_rate.bpm"}],
-        "bucketByTime": {"durationMillis": 86400000},
-        "startTimeMillis": (int(time.time()) - 86400 * 1000 * 10),
-        "endTimeMillis": int(time.time()),
-    }).execute()
+    # data = service.users().dataset().aggregate(userId='me', body={
+    #     "aggregateBy": [{"dataTypeName": "com.google.heart_rate.bpm"}],
+    #     "bucketByTime": {"durationMillis": 86400000},
+    #     "startTimeMillis": (int(time.time()) - 86400 * 1000 * 10),
+    #     "endTimeMillis": int(time.time()),
+    # }).execute()
     
-    return render(request, 'heart_rate.html', {'data': data})
+    # return render(request, 'heart_rate.html', {'data': data})
+    return render(request, 'metrics\heart_rate.html', {'data': {}})

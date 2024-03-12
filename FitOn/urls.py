@@ -16,8 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from metrics.views import get_heart_rate
 
 urlpatterns = [
+    path("", get_heart_rate),
     path("admin/", admin.site.urls),
     path("metrics/", include("metrics.urls")),
     path("user/", include("user.urls")),

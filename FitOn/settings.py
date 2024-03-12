@@ -26,7 +26,7 @@ SECRET_KEY = "django-insecure-@y1qhh9hpgn5a9zjtslz8%au^cs8--2-m2zxz1%w2f5tug)30=
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["fiton-prod.eba-keqgfz2g.us-east-1.elasticbeanstalk.com"]
+ALLOWED_HOSTS = ["fiton-prod.eba-keqgfz2g.us-east-1.elasticbeanstalk.com", "127.0.0.1"]
 
 
 # Application definition

@@ -18,14 +18,14 @@
                 </tr>
             </thead>
             <tbody>
-                {% for point in data.get('bucket', {}).get('dataSets', []) %}
+                {% comment %} {% for point in data.get('bucket', {}).get('dataSets', []) %}
                     {% for value in point.get('point', []) %}
                         <tr>
                             <td>{{ value.get('startTimeNanos')|date:"Y-m-d H:i:s" }}</td>
                             <td>{{ value.get('value', {}).get('intVal') }}</td>
                         </tr>
                     {% endfor %}
-                {% endfor %}
+                {% endfor %} {% endcomment %}
             </tbody>
         </table>
     {% else %}
