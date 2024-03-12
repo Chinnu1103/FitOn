@@ -18,4 +18,4 @@ def get_heart_rate(request):
     # }).execute()
     
     # return render(request, 'heart_rate.html', {'data': data})
-    return render(request, 'metrics\heart_rate.html', {'data': {}})
+    return render(request, 'metrics/heart_rate.html', {'data': {}})
