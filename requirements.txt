@@ -6,3 +6,4 @@ google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
 requests
+Pillow
