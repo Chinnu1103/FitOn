@@ -39,7 +39,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "user",
-    "metrics"
+    "metrics",
+    "exercise"
 ]
 
 MIDDLEWARE = [
@@ -144,3 +145,5 @@ GOOGLEFIT_CLIENT_CONFIG = {
         "client_secret": GOOGLEFIT_CLIENT_SECRET
     }
 }
+
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'

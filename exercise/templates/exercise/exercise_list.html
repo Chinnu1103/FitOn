@@ -1,0 +1,172 @@
+{% load static %}
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Filtered Exercise List</title>
+</head>
+<body>
+    {% include "user/navbar.html" %}
+    <link rel="stylesheet" href="{% static 'exercise/css/exerciseListStyle.css' %}">
+
+    <div class="container-fluid mx-0">
+        <div class="row">
+            <div class="col-9 px-0">
+                <div class="search-and-filter py-4">
+                    <div class="filter-left-column container">
+                        <div class="row">
+                            <button id="recommended_exercises">View Recommended Exercises</button>
+                        </div>
+                        <div class="row">
+                            <form method="get" id="search-form">
+                                <div class="form-name-input">
+                                    <input type="text" name="exercise_name" id="exercise_name" placeholder="Search exercises">
+                                    <button id="search-button" type="button" class="btn btn-primary" onclick="handleFilterChange()">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                                            <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                                        </svg>
+                                    </button>
+                                    <input type="submit" hidden/>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="filter-right-column container">
+                        <form method="get" class="filter-form" id="filter-form" onchange="handleFilterChange()">
+                            <fieldset id="filter-fieldset">
+                                <legend>FILTERS</legend>
+                                <hr class="mt-0 mb-3"/>
+                                <div class="row">
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label for="exercise_muscle">Muscle:</label>
+                                            <select class="custom-select" id="exercise_muscle" name="exercise_muscle">
+                                                <option value="none">None</option>
+                                                <option value="abdominals">Abdominals</option>
+                                                <option value="hamstrings">Hamstrings</option>
+                                                <option value="calves">Calves</option>
+                                                <option value="shoulders">Shoulders</option>
+                                                <option value="adductors">Adductors</option>
+                                                <option value="glutes">Glutes</option>
+                                                <option value="quadriceps">Quadriceps</option>
+                                                <option value="biceps">Biceps</option>
+                                                <option value="forearms">Forearms</option>
+                                                <option value="abductors">Abductors</option>
+                                                <option value="triceps">Triceps</option>
+                                                <option value="chest">Chest</option>
+                                                <option value="lower back">Lower Back</option>
+                                                <option value="traps">Traps</option>
+                                                <option value="middle back">Middle Back</option>
+                                                <option value="lats">Lats</option>
+                                                <option value="neck">Neck</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="exercise_level">Level:</label>
+                                            <select class="custom-select" id="exercise_level" name="exercise_level">
+                                                <option value="none">None</option>
+                                                <option value="beginner">Beginner</option>
+                                                <option value="intermediate">Intermediate</option>
+                                                <option value="expert">Expert</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="form-group">
+                                            <label for="exercise_equipment">Equipment:</label>
+                                            <select class="custom-select" id="exercise_equipment" name="exercise_equipment">
+                                                <option value="none">None</option>
+                                                <option value="body only">Body Only</option>
+                                                <option value="machine">Machine</option>
+                                                <option value="kettlebells">Kettlebells</option>
+                                                <option value="dumbbell">Dumbbell</option>
+                                                <option value="cable">Cable</option>
+                                                <option value="barbell">Barbell</option>
+                                                <option value="bands">Bands</option>
+                                                <option value="medicine ball">Medicine Ball</option>
+                                                <option value="exercise ball">Exercise Ball</option>
+                                                <option value="e-z curl bar">E-Z Curl Bar</option>
+                                                <option value="foam roll">Foam Roll</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="exercise_category">Category:</label>
+                                            <select class="custom-select" id="exercise_category" name="exercise_category">
+                                                <option value="none">None</option>
+                                                <option value="strength">Strength</option>
+                                                <option value="stretching">Stretching</option>
+                                                <option value="plyometrics">Plyometrics</option>
+                                                <option value="strongman">Strongman</option>
+                                                <option value="powerlifting">Powerlifting</option>
+                                                <option value="cardio">Cardio</option>
+                                                <option value="olympic weightlifting">Olympic Weightlifting</option>
+                                                <option value="crossfit">Crossfit</option>
+                                                <option value="weighted bodyweight">Weighted Bodyweight</option>
+                                                <option value="assisted bodyweight">Assisted Bodyweight</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </fieldset>
+                            <button type="submit" hidden></button>
+                        </form>
+                    </div>
+                </div>
+            
+                {% for exercise in exercises %}
+                    <div class="exercise-card mx-2">
+                        <img src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
+                        <div class="exercise-details">
+                            <h3>{{ exercise.name }}</h3>
+                            <p><strong>Level</strong> {{ exercise.level }}</p>
+                            <p><strong>Primary Muscles:</strong> 
+                                {% for muscle in exercise.primaryMuscles.all %}
+                                    {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+                            <p><strong>Secondary Muscles:</strong> 
+                                {% for muscle in exercise.secondaryMuscles.all %}
+                                    {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </p>
+                            <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            
+                <!-- Pagination -->
+                <div class="pagination container">
+                    {% if exercises.has_previous %}
+                    <a onclick="javascript:getPageUrl(1)" class="first">First</a>
+                    <a onclick="javascript:getPageUrl({{ exercises.previous_page_number }})" class="prev">&laquo; Previous</a>
+                    {% endif %}
+            
+                    <div class="page-numbers">
+                        {% for num in page_range %}
+                            {% if current_page_number == num %}
+                                <a onclick="javascript:getPageUrl({{ num }})" class="page active">{{ num }}</a>
+                            {% elif num > current_page_number|add:'-4' and num < current_page_number|add:'4' %} <a onclick="javascript:getPageUrl({{ num }})"
+                                class="page">{{ num }}</a>
+                            {% endif %}
+                        {% endfor %}
+            
+                    </div>
+                    <span class="current mx-3">Page {{ current_page_number }} of {{ num_pages }} pages</span>
+            
+                    {% if exercises.has_next %}
+                        <a onclick="javascript:getPageUrl({{ exercises.next_page_number }})" class="next">Next &raquo;</a>
+                        <a onclick="javascript:getPageUrl({{ num_pages }})" class="last">Last</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="col-3">
+                <h2>Selected Exercises:</h2>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script src="{% static 'exercise/javascript/exercise_list.js' %}"></script>
+
+</html>

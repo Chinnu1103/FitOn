@@ -13,7 +13,7 @@ class User(models.Model):
     phone = models.CharField(max_length=15, default="000-000-0000")
     sex = models.CharField(max_length=10, choices=Choices.sex, default="other")
     height = models.FloatField(max_length=100)
-    width = models.FloatField(max_length=100)
+    weight = models.FloatField(max_length=100)
     city = models.CharField(max_length=50)
     avatar = models.ImageField(
         upload_to="avatars/",

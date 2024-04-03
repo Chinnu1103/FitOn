@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
+
 import datetime
 
 dataTypes = {
@@ -24,7 +24,6 @@ def list_metrics(request):
     return render(request, 'metrics/metric_list.html')
 
 def get_metric_data(request, metric):
-    
     data = None
     if "credentials" in request.session:
         try:
