@@ -319,5 +319,4 @@ def callback_google_fit(request):
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes
         }
-        
     return redirect(reverse("metrics:list_metrics"))
