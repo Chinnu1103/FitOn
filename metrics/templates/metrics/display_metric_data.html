@@ -1,12 +1,57 @@
 <!-- templates/heart_rate_timeline.html -->
 <!DOCTYPE html>
+<html lang="en"></html>
 <html>
 <head>
-    <title>{{ type }}</title>
+    <meta charset="UTF-8">
+    <title>Steps Bar Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    {% if data %}
-    {{data}}
+    {% if steps_data_json %}
+    <h1>Steps Count per Day</h1>
+    <canvas id="stepsChart" width="800" height="400"></canvas>
+    <script>
+        // Get steps data from Django template context
+        let stepsData = JSON.parse('{{ steps_data_json| escapejs }}');
+        
+        // Extract dates and steps count
+        let dates = stepsData.map(entry => entry.start);
+        let stepsCount = stepsData.map(entry => entry.count);
+
+        // Get canvas element
+        const ctx = document.getElementById('stepsChart').getContext('2d');
+
+        // Create bar plot
+        const stepsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Steps Count',
+                    data: stepsCount,
+                    backgroundColor: 'blue',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Steps Count'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
     {% else %}
     <a href="{% url 'user:authorize_google_fit' %}">Sign In using Google</a>
     {% endif %}
