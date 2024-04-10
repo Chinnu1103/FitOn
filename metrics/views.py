@@ -32,6 +32,7 @@ def list_metrics(request):
 
 def steps_barplot(data):
     # Your steps data
+    print("inside steps function\n")
     steps_data=[]
     for record in data['bucket']:
         if len(record['dataset'][0]['point'])==0:
@@ -42,19 +43,65 @@ def steps_barplot(data):
             d['end']=parse_millis(record['endTimeMillis'])
             d['count']=record['dataset'][0]['point'][0]['value'][0]['intVal']
             steps_data.append(d)
-    
-    steps_data_json=json.dumps(steps_data)
 
     # Pass the plot path to the template
-    context = {'steps_data_json': steps_data_json}
+    context = {'steps_data_json': steps_data}
     return context
-    # return render(request, 'steps_barplot.html', context)
-        
+
+def heartrate_plot(data):
+    print("inside heart function\n")
+    heart_data=[]
+    for record in data['bucket']:
+        if len(record['dataset'][0]['point'])==0:
+            continue
+        else:
+            d={}
+            d['start']=parse_millis(record['startTimeMillis'])
+            d['end']=parse_millis(record['endTimeMillis'])
+            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            heart_data.append(d)
+
+    # Pass the plot path to the template
+    context = {'heart_data_json': heart_data}
+    return context
+
+def resting_heartrate_plot(data):
+    print("inside resting heart function\n")
+    resting_heart_data=[]
+    for record in data['bucket']:
+        if len(record['dataset'][0]['point'])==0:
+            continue
+        else:
+            d={}
+            d['start']=parse_millis(record['startTimeMillis'])
+            d['end']=parse_millis(record['endTimeMillis'])
+            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            resting_heart_data.append(d)
+
+    # Pass the plot path to the template
+    context = {'resting_heart_data_json': resting_heart_data}
+    return context
+
+def sleep_plot(data):
+    print("inside sleep function\n")
+    sleep_data=[]
+    for record in data['bucket']:
+        if len(record['dataset'][0]['point'])==0:
+            continue
+        else:
+            d={}
+            d['start']=parse_millis(record['startTimeMillis'])
+            d['end']=parse_millis(record['endTimeMillis'])
+            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            sleep_data.append(d)
+
+    # Pass the plot path to the template
+    context = {'sleep_data_json': sleep_data}
+    return context
 
 
 def get_metric_data(request, metric):
-    data = None
-    # print(request.session['credentials'])
+    total_data = {}
     if "credentials" in request.session:
         try:
             credentials = Credentials(**request.session["credentials"])
@@ -64,22 +111,37 @@ def get_metric_data(request, metric):
             start_time = end_time - datetime.timedelta(days=10)
             print(start_time.timestamp())
             print(end_time.timestamp())
-
-            data = service.users().dataset().aggregate(userId='me', body={
-                "aggregateBy": [{
-                    "dataTypeName": dataTypes[metric],
-                    "dataSourceId": dataSources[metric]
-                }],
-                "bucketByTime": {"durationMillis": 86400000},
-                "startTimeMillis": int(start_time.timestamp()) * 1000,
-                "endTimeMillis": int(end_time.timestamp()) * 1000,
-            }).execute()
-            
+            for metric in dataTypes.keys():
+                data = service.users().dataset().aggregate(userId='me', body={
+                    "aggregateBy": [{
+                        "dataTypeName": dataTypes[metric],
+                        "dataSourceId": dataSources[metric]
+                    }],
+                    "bucketByTime": {"durationMillis": 86400000},
+                    "startTimeMillis": int(start_time.timestamp()) * 1000,
+                    "endTimeMillis": int(end_time.timestamp()) * 1000,
+                }).execute()
+                print(metric)
+                print(data)
+                if metric=="heart_rate":
+                    context=heartrate_plot(data)
+                    total_data['heartRate']=context
+                elif metric=="steps":
+                    context=steps_barplot(data)
+                    total_data['steps']=context
+                    print(total_data)
+                elif metric=="resting_heart_rate":
+                    context=resting_heartrate_plot(data)
+                    total_data['restingHeartRate']=context
+                # elif metric=="sleep":
+                #     context=sleep_plot(data)
+                #     total_data['sleep']=context
+            print(total_data)    
         except Exception as e:
             print(e)
             data = None
+
+    context = {'data':total_data}
     
-    context=steps_barplot(data)
-    print(context)
-    print(type(context))
+
     return render(request, 'metrics/display_metric_data.html', context)
