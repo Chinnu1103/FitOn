@@ -4,6 +4,7 @@ from googleapiclient.discovery import build
 import matplotlib.pyplot as plt
 import json
 import datetime
+from .models import HealthMetric
 
 
 dataTypes = {
@@ -145,3 +146,13 @@ def get_metric_data(request, metric):
     
 
     return render(request, 'metrics/display_metric_data.html', context)
+
+def health_data_view(request):
+    if request.method == 'POST':
+        # Process the form data and save to the database
+        metric = request.POST.get('metric')
+        time = request.POST.get('time')
+        value = request.POST.get('value')
+        HealthMetric.objects.create(metric=metric, time=time, value=value)
+        return redirect('metrics:submit_health_data')  # Redirect back to the same page or to a 'success' page
+    return render(request, 'metrics/display_metric_data.html')
