@@ -3,6 +3,9 @@
 <head>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <title>Filtered Exercise List</title>
+    <script>
+        var filter_dict = {{ filter_dict|safe }};
+    </script>
 </head>
 <body>
     {% include "user/navbar.html" %}
@@ -11,14 +14,14 @@
     <div class="container-fluid mx-0">
         <div class="row">
             <div class="col-9 px-0">
-                <div class="search-and-filter py-4">
-                    <div class="filter-left-column container">
+                <div class="search-and-filter py-4 mt-0">
+                    <div class="filter-left-column container mx-0 mr-5">
                         <div class="row">
-                            <button id="recommended_exercises">View Recommended Exercises</button>
+                            <p class='display-4'>PLAN YOUR WORKOUT</p>
                         </div>
                         <div class="row">
                             <form method="get" id="search-form">
-                                <div class="form-name-input">
+                                <div class="form-name-input px-0" style="display: flex; justify-content: space-between;">
                                     <input type="text" name="exercise_name" id="exercise_name" placeholder="Search exercises">
                                     <button id="search-button" type="button" class="btn btn-primary" onclick="handleFilterChange()">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
@@ -30,8 +33,8 @@
                             </form>
                         </div>
                     </div>
-                    <div class="filter-right-column container">
-                        <form method="get" class="filter-form" id="filter-form" onchange="handleFilterChange()">
+                    <div class="filter-right-column container col-6 pl-5">
+                        <form method="get" class="filter-form" id="filter-form">
                             <fieldset id="filter-fieldset">
                                 <legend>FILTERS</legend>
                                 <hr class="mt-0 mb-3"/>
@@ -74,8 +77,8 @@
                                         <div class="form-group">
                                             <label for="exercise_equipment">Equipment:</label>
                                             <select class="custom-select" id="exercise_equipment" name="exercise_equipment">
-                                                <option value="none">None</option>
-                                                <option value="body only">Body Only</option>
+                                                <option value="none" {% if option.value == filter_dict.equipment %}selected{% endif %}>None</option>
+                                                <option value="body only ">Body Only</option>
                                                 <option value="machine">Machine</option>
                                                 <option value="kettlebells">Kettlebells</option>
                                                 <option value="dumbbell">Dumbbell</option>
@@ -111,13 +114,85 @@
                         </form>
                     </div>
                 </div>
-            
-                {% for exercise in exercises %}
-                    <div class="exercise-card mx-2">
-                        <img src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
+
+                <div id="display_ex_container" class="container-fluid">
+                    {% for exercise in exercises %}
+                        {% if forloop.first or forloop.index0|divisibleby:2 %}
+                            <div class="exercise-card-row">
+                        {% endif %}
+
+                        <div class="exercise-card mx-2">
+                            <div class="p-1" style="display: flex; flex-direction: column;">
+                                <img src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
+                                <img class="mt-1" src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
+                            </div>
+                            <div class="exercise-details ml-3 row">
+                                <h3 class="mb-4"><strong>{{ exercise.name }}</strong></h3>
+                                <div class="col-6">
+                                    <p><strong>Level:</strong> {{ exercise.level }}</p>
+                                    <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
+                                    <p><strong>Primary Muscles:</strong> 
+                                        {% for muscle in exercise.primaryMuscles.all %}
+                                            {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                </div>
+                                <div class="col-6">
+                                    <p><strong>Secondary Muscles:</strong> 
+                                        {% for muscle in exercise.secondaryMuscles.all %}
+                                            {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="container" style="position: relative;">
+                                <button id="add_to_selected">Add to selected</button>
+                            </div>
+                        </div>
+
+                        {% if forloop.last or forloop.index0|add:1|divisibleby:2 %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                
+                    <!-- Pagination -->
+                    <div class="pagination container">
+                        {% if exercises.has_previous %}
+                        <a onclick="javascript:getPageUrl(1)" class="first">First</a>
+                        <a onclick="javascript:getPageUrl({{ exercises.previous_page_number }})" class="prev">&laquo; Previous</a>
+                        {% endif %}
+                
+                        <div class="page-numbers">
+                            {% for num in page_range %}
+                                {% if current_page_number == num %}
+                                    <a onclick="javascript:getPageUrl({{ num }})" class="page active">{{ num }}</a>
+                                {% elif num > current_page_number|add:'-4' and num < current_page_number|add:'4' %} <a onclick="javascript:getPageUrl({{ num }})"
+                                    class="page">{{ num }}</a>
+                                {% endif %}
+                            {% endfor %}
+                
+                        </div>
+                        <span class="current mx-3">Page {{ current_page_number }} of {{ num_pages }} pages</span>
+                
+                        {% if exercises.has_next %}
+                            <a onclick="javascript:getPageUrl({{ exercises.next_page_number }})" class="next">Next &raquo;</a>
+                            <a onclick="javascript:getPageUrl({{ num_pages }})" class="last">Last</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-3">
+                <h1 class='text-center mt-3'><strong>Selected Exercises</strong></h1>
+                <hr>
+                <button id="download_exercises">Download Exercise Plan</button>
+                <div id='selected_ex_container' class="mt-5">
+                    {% for exercise in exercises %}
+                    <div class="selected-card mx-2">
                         <div class="exercise-details">
-                            <h3>{{ exercise.name }}</h3>
-                            <p><strong>Level</strong> {{ exercise.level }}</p>
+                            <h3 class="mb-4"><strong>{{ exercise.name }}</strong></h3>
+                            <p><strong>Level:</strong> {{ exercise.level }}</p>
+                            <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
                             <p><strong>Primary Muscles:</strong> 
                                 {% for muscle in exercise.primaryMuscles.all %}
                                     {{ muscle.name }}{% if not forloop.last %}, {% endif %}
@@ -128,45 +203,21 @@
                                     {{ muscle.name }}{% if not forloop.last %}, {% endif %}
                                 {% endfor %}
                             </p>
-                            <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
+                        </div>
+                        <button id="remove_selected">X</button>
+                        <div style="position: relative;">
+                            
                         </div>
                     </div>
-                {% endfor %}
-            
-                <!-- Pagination -->
-                <div class="pagination container">
-                    {% if exercises.has_previous %}
-                    <a onclick="javascript:getPageUrl(1)" class="first">First</a>
-                    <a onclick="javascript:getPageUrl({{ exercises.previous_page_number }})" class="prev">&laquo; Previous</a>
-                    {% endif %}
-            
-                    <div class="page-numbers">
-                        {% for num in page_range %}
-                            {% if current_page_number == num %}
-                                <a onclick="javascript:getPageUrl({{ num }})" class="page active">{{ num }}</a>
-                            {% elif num > current_page_number|add:'-4' and num < current_page_number|add:'4' %} <a onclick="javascript:getPageUrl({{ num }})"
-                                class="page">{{ num }}</a>
-                            {% endif %}
-                        {% endfor %}
-            
-                    </div>
-                    <span class="current mx-3">Page {{ current_page_number }} of {{ num_pages }} pages</span>
-            
-                    {% if exercises.has_next %}
-                        <a onclick="javascript:getPageUrl({{ exercises.next_page_number }})" class="next">Next &raquo;</a>
-                        <a onclick="javascript:getPageUrl({{ num_pages }})" class="last">Last</a>
-                    {% endif %}
+                    {% endfor %}
                 </div>
             </div>
-
-            <div class="col-3">
-                <h2>Selected Exercises:</h2>
-            </div>
         </div>
-    </div>
+    </div>``
 
 </body>
 
-<script src="{% static 'exercise/javascript/exercise_list.js' %}"></script>
+<script src="{% static 'exercise/javascript/exercise_list.js' %}">
+</script>
 
 </html>

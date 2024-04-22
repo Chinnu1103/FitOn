@@ -85,7 +85,8 @@ def register(request):
             usr = create_django_user(
                 form_data["email"], form_data["password"], form_data["name"]
             )
-            create_user_profile(user_type, **form_data)
+            del form_data["password"]
+            create_user_profile(**form_data)
             login(request, usr)
             print("User saved successfully")
         except Exception as e:
@@ -320,3 +321,6 @@ def callback_google_fit(request):
             'scopes': credentials.scopes
         }
     return redirect(reverse("metrics:list_metrics"))
+
+def account_page(request):
+    return render(request, 'user/account.html')

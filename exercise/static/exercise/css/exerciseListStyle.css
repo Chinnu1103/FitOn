@@ -146,6 +146,27 @@ legend {
   margin: 10px 2px;
 }
 
+#exercise_name {
+  height: 50px;
+  width: auto;
+  flex: 2;
+}
+
+#search-button {
+  height: 50px;
+  margin-left: 5px;
+}
+
+.page {
+  text-decoration: none;
+  border-radius: 20%;
+  color: #333;
+  padding: 5px 10px;
+  border: 2px solid #94c0f1;
+  margin: 10px 2px;
+}
+
+.page:hover,
 .prev:hover,
 .next:hover,
 .first:hover,
@@ -172,9 +193,28 @@ legend {
 .exercise-card {
   display: flex;
   margin-bottom: 20px;
-  border: 1px solid #ccc;
   border-radius: 5px;
   overflow: hidden;
+  background-color: #e9edee;
+  box-shadow: 0 12px 8px rgba(51, 51, 51, 0.1);
+
+  height: 350px; /* Set the desired height for all cards */
+  width: calc(50% - 20px); /* Ensure two cards fit in a row with margin */
+  margin: 10px; /* Add margin between cards */
+  overflow: hidden; /* Hide overflow content */
+  border: 1px solid #ccc; /* Add border for visual separation */
+  box-sizing: border-box; /* Include border in the width and height */
+}
+
+.selected-card {
+  margin-bottom: 20px;
+  border-radius: 5px;
+  overflow: hidden;
+  background-color: #e9edee;
+  box-shadow: 0 12px 8px rgba(51, 51, 51, 0.1);
+  position: relative;
+  padding-right: 50px;
+
 }
 
 .exercise-card img {
@@ -182,6 +222,72 @@ legend {
   height: auto;
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
+}
+
+.exercise-card-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+#add_to_selected {
+  position: absolute; /* Set position to absolute */
+  top: 5; /* Align to the top */
+  right: 5; /* Align to the right */
+  background-color: #4CAF50; /* Green background color */
+  border: none;
+  color: white; /* Text color */
+  padding: 10px 20px; /* Padding */
+  text-align: center; /* Center align text */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Display as block element */
+  font-size: 16px; /* Font size */
+  margin: 4px 2px; /* Margin */
+  transition-duration: 0.4s; /* Transition effect duration */
+  cursor: pointer; /* Cursor style */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow */
+}
+
+#remove_selected {
+  position: absolute; /* Set position to absolute */
+  top: 5; /* Align to the top */
+  right: 5; /* Align to the right */
+  background-color: #dd2727; /* Green background color */
+  border: none;
+  color: white; /* Text color */
+  text-align: center; /* Center align text */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Display as block element */
+  font-size: 16px; /* Font size */
+  margin: 4px 2px; /* Margin */
+  transition-duration: 0.4s; /* Transition effect duration */
+  cursor: pointer; /* Cursor style */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow */
+  width: 30px;
+  height: 30px;
+}
+
+#download_exercises {
+  background-color: #3756e0; /* Green background color */
+  border: none;
+  color: white; /* Text color */
+  text-align: center; /* Center align text */
+  text-decoration: none; /* Remove underline */
+  display: inline-block; /* Display as block element */
+  font-size: 16px; /* Font size */
+  margin: 10px 2px; /* Margin */
+  transition-duration: 0.4s; /* Transition effect duration */
+  cursor: pointer; /* Cursor style */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Shadow */
+  width: 100%;
+  height: 50px;
+}
+
+#selected_ex_container {
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
 
 .exercise-details {

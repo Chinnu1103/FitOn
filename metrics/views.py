@@ -100,7 +100,7 @@ def sleep_plot(data):
     return context
 
 
-def get_metric_data(request, metric):
+def get_metric_data(request):
     total_data = {}
     if "credentials" in request.session:
         try:
@@ -121,8 +121,6 @@ def get_metric_data(request, metric):
                     "startTimeMillis": int(start_time.timestamp()) * 1000,
                     "endTimeMillis": int(end_time.timestamp()) * 1000,
                 }).execute()
-                print(metric)
-                print(data)
                 if metric=="heart_rate":
                     context=heartrate_plot(data)
                     total_data['heartRate']=context
@@ -135,8 +133,7 @@ def get_metric_data(request, metric):
                     total_data['restingHeartRate']=context
                 # elif metric=="sleep":
                 #     context=sleep_plot(data)
-                #     total_data['sleep']=context
-            print(total_data)    
+                #     total_data['sleep']=context   
         except Exception as e:
             print(e)
             data = None
