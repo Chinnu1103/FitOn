@@ -39,20 +39,20 @@ const stepsChart = new Chart(stepsCtx, {
                 title: {
                     display: true,
                     text: 'Date',
-                    color:'white'
+                    color:'black'
                 },
                 ticks: {
-                    color: 'white' 
+                    color: 'black' 
                 }
             },
             y: {
                 title: {
                     display: true,
                     text: 'Steps Count',
-                    color:'white'
+                    color:'black'
                 },
                 ticks: {
-                    color: 'white' 
+                    color: 'black' 
                 }
             }
         }
@@ -78,10 +78,10 @@ const heartRateChart = new Chart(heartRateCtx, {
                 title: {
                     display: true,
                     text: 'Date',
-                    color:'white'
+                    color:'black'
                 },
                 ticks: {
-                    color: 'white' 
+                    color: 'black' 
                 }
 
             },
@@ -89,10 +89,10 @@ const heartRateChart = new Chart(heartRateCtx, {
                 title: {
                     display: true,
                     text: 'Heart Rate',
-                    color:'white'
+                    color:'black'
                 },
                 ticks: {
-                    color: 'white' 
+                    color: 'black' 
                 },
                 min:0,
                 max:100
@@ -120,22 +120,22 @@ const restingHeartRateChart = new Chart(restingHeartRateCtx, {
                 title: {
                     display: true,
                     text: 'Date',
-                    color:'white'
+                    color:'black'
                 },
                 ticks: {
-                    color: 'white' 
+                    color: 'black' 
                 },
             },
             y: {
                 title: {
                     display: true,
                     text: 'Resting Heart Rate',
-                    color:'white'
+                    color:'black'
                 },
                 min:0,
                 max:100,
                 ticks: {
-                    color: 'white' 
+                    color: 'black' 
                 }
                 }
             }

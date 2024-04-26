@@ -2,7 +2,8 @@ from django.shortcuts import render, redirect
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 import matplotlib.pyplot as plt
-import json
+from asgiref.sync import sync_to_async
+import asyncio
 import datetime
 
 
@@ -99,46 +100,67 @@ def sleep_plot(data):
     context = {'sleep_data_json': sleep_data}
     return context
 
+async def fetch_metric_data(service, metric, total_data):
+    
+    end_time = datetime.datetime.now().replace(hour=23, minute=59, second=59)
+    start_time = end_time - datetime.timedelta(days=10)
+    print(start_time.timestamp())
+    print(end_time.timestamp())
+    
+    data = service.users().dataset().aggregate(userId='me', body={
+        "aggregateBy": [{
+            "dataTypeName": dataTypes[metric],
+            "dataSourceId": dataSources[metric]
+        }],
+        "bucketByTime": {"durationMillis": 86400000},
+        "startTimeMillis": int(start_time.timestamp()) * 1000,
+        "endTimeMillis": int(end_time.timestamp()) * 1000,
+    }).execute()
+    if metric=="heart_rate":
+        context=heartrate_plot(data)
+        total_data['heartRate']=context
+    elif metric=="steps":
+        context=steps_barplot(data)
+        total_data['steps']=context
+    elif metric=="resting_heart_rate":
+        context=resting_heartrate_plot(data)
+        total_data['restingHeartRate']=context
+    elif metric=="sleep":
+        context=sleep_plot(data)
+        total_data['sleep']=context
 
-def get_metric_data(request):
-    total_data = {}
+@sync_to_async
+def get_credentials(request):
     if "credentials" in request.session:
+        credentials = Credentials(**request.session["credentials"])
+        return credentials
+    
+    return None
+
+async def fetch_all_metric_data(request):
+    total_data = {}
+    credentials = await get_credentials(request)
+    if credentials:
         try:
-            credentials = Credentials(**request.session["credentials"])
             service = build('fitness', 'v1', credentials=credentials)
-            
-            end_time = datetime.datetime.now().replace(hour=23, minute=59, second=59)
-            start_time = end_time - datetime.timedelta(days=10)
-            print(start_time.timestamp())
-            print(end_time.timestamp())
+            tasks = []
             for metric in dataTypes.keys():
-                data = service.users().dataset().aggregate(userId='me', body={
-                    "aggregateBy": [{
-                        "dataTypeName": dataTypes[metric],
-                        "dataSourceId": dataSources[metric]
-                    }],
-                    "bucketByTime": {"durationMillis": 86400000},
-                    "startTimeMillis": int(start_time.timestamp()) * 1000,
-                    "endTimeMillis": int(end_time.timestamp()) * 1000,
-                }).execute()
-                if metric=="heart_rate":
-                    context=heartrate_plot(data)
-                    total_data['heartRate']=context
-                elif metric=="steps":
-                    context=steps_barplot(data)
-                    total_data['steps']=context
-                    print(total_data)
-                elif metric=="resting_heart_rate":
-                    context=resting_heartrate_plot(data)
-                    total_data['restingHeartRate']=context
-                # elif metric=="sleep":
-                #     context=sleep_plot(data)
-                #     total_data['sleep']=context   
+                tasks.append(fetch_metric_data(service, metric, total_data))
+            
+            await asyncio.gather(*tasks)
         except Exception as e:
             print(e)
-            data = None
-
-    context = {'data':total_data}
+            total_data = {}
     
+    else:
+        print("Not signed in Google")
+    
+    return total_data
+        
 
+async def get_metric_data(request):
+    total_data = await fetch_all_metric_data(request)
+    
+    context = {'data': total_data}
+    print(total_data)
     return render(request, 'metrics/display_metric_data.html', context)

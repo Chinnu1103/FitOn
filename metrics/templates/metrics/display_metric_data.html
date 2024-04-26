@@ -12,7 +12,51 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.4.1/dist/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
 </head>
 <body>
-    {% if user.is_authenticated %}
+    {% include "user/navbar.html" %}
+    <link rel="stylesheet" href="{% static 'metrics/css/display_metric_data.css' %}">
+    {% if data %}
+
+    <div class="search-and-filter py-4 mt-0 mb-5">
+        <div class="filter-left-column container mx-0 mr-5">
+            <div class="row">
+                <p class='display-4'>Home Dashboard</p>
+            </div>
+        </div>
+        <div class="filter-right-column container col-6 pl-5">
+            <form method="get" class="filter-form" id="filter-form">
+                <fieldset id="filter-fieldset">
+                    <legend>FILTERS</legend>
+                    <hr class="mt-0 mb-3"/>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="data_length">Data Duration:</label>
+                                <select class="custom-select" id="metric_list" name="metric_list">
+                                    <option value="hour">Past Hour</option>
+                                    <option value="day">Past Day</option>
+                                    <option value="week">Past Week</option>
+                                    <option value="month">Past Month</option>
+                                    <option value="year">Past Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label for="data_freq">Data Frequency:</label>
+                                <select class="custom-select" id="data_freq" name="data_freq">
+                                    <option value="hourly">Per Hour</option>
+                                    <option value="daily">Per Day</option>
+                                    <option value="weekly">Per Week</option>
+                                    <option value="dumbbell">Dumbbell</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+                <button type="submit" hidden></button>
+            </form>
+        </div>
+    </div>
 
     <div class="container-fluid">
         <div class="row">
@@ -21,7 +65,7 @@
                 <canvas id="stepsChart"></canvas>
             </div>
             <div class="col-md-6">
-                <h2>Resting Heart Rate per Day</h2>
+                <h2>Heart Rate per Day</h2>
                 <canvas id="heartRateChart"></canvas>
             </div>
         </div>

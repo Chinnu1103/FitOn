@@ -7,3 +7,5 @@ google-auth-oauthlib==1.2.0
 googleapis-common-protos==1.63.0
 requests==2.27
 Pillow
+matplotlib
+asyncio

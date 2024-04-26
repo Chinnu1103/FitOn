@@ -127,7 +127,7 @@
                                 <img class="mt-1" src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
                             </div>
                             <div class="exercise-details ml-3 row">
-                                <h3 class="mb-4"><strong>{{ exercise.name }}</strong></h3>
+                                <h3 class="mb-4 container-fluid my-0" style="padding-right: 120px;"><strong>{{ exercise.name }}</strong></h3>
                                 <div class="col-6">
                                     <p><strong>Level:</strong> {{ exercise.level }}</p>
                                     <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
@@ -145,7 +145,7 @@
                                     </p>
                                 </div>
                             </div>
-                            <div class="container" style="position: relative;">
+                            <div style="position: relative;">
                                 <button id="add_to_selected">Add to selected</button>
                             </div>
                         </div>

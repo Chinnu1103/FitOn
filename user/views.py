@@ -320,7 +320,7 @@ def callback_google_fit(request):
             'client_secret': credentials.client_secret,
             'scopes': credentials.scopes
         }
-    return redirect(reverse("metrics:list_metrics"))
+    return redirect(reverse("metrics:get_metric_data"))
 
 def account_page(request):
     return render(request, 'user/account.html')
