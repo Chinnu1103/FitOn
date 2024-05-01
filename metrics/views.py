@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import json
 import datetime
 from .models import HealthMetric
-
+from aws_conf import get_dynamodb_resource
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
@@ -157,24 +157,56 @@ def get_metric_data(request, metric):
 #         return redirect('metrics:submit_health_data')  # Redirect back to the same page or to a 'success' page
 #     return render(request, 'metrics/display_metric_data.html')
 
-def health_data_view(request):
-    if request.method == 'POST':
-        # Process the form data and save to the database
-        metric = request.POST.get('metric')
-        time = request.POST.get('time')
-        value = request.POST.get('value')
-        HealthMetric.objects.create(metric=metric, time=time, value=value)
+# def health_data_view(request):
+#     if request.method == 'POST':
+#         # Process the form data and save to the database
+#         metric = request.POST.get('metric')
+#         time = request.POST.get('time')
+#         value = request.POST.get('value')
+#         HealthMetric.objects.create(metric=metric, time=time, value=value)
     
-    # Fetch all the metrics data from the database
-    metrics_data = {
-        'heart_rate': HealthMetric.objects.filter(metric='heart_rate').order_by('-time'),
-        'oxygen_spo2': HealthMetric.objects.filter(metric='oxygen_spo2').order_by('-time'),
-        'steps': HealthMetric.objects.filter(metric='steps').order_by('-time'),
-        'resting_heart_rate': HealthMetric.objects.filter(metric='resting_heart_rate').order_by('-time'),
-        'sleep': HealthMetric.objects.filter(metric='sleep').order_by('-time'),
-        'exercise': HealthMetric.objects.filter(metric='exercise').order_by('-time'),
-        'stress': HealthMetric.objects.filter(metric='stress').order_by('-time'),
-        # Add other metrics if necessary
-    }
+#     # Fetch all the metrics data from the database
+#     metrics_data = {
+#         'heart_rate': HealthMetric.objects.filter(metric='heart_rate').order_by('-time'),
+#         'oxygen_spo2': HealthMetric.objects.filter(metric='oxygen_spo2').order_by('-time'),
+#         'steps': HealthMetric.objects.filter(metric='steps').order_by('-time'),
+#         'resting_heart_rate': HealthMetric.objects.filter(metric='resting_heart_rate').order_by('-time'),
+#         'sleep': HealthMetric.objects.filter(metric='sleep').order_by('-time'),
+#         'exercise': HealthMetric.objects.filter(metric='exercise').order_by('-time'),
+#         'stress': HealthMetric.objects.filter(metric='stress').order_by('-time'),
+#         # Add other metrics if necessary
+#     }
+
+#     return render(request, 'metrics/display_metric_data.html', {'metrics_data': metrics_data})
+
+def health_data_view(request):
+    dynamodb = get_dynamodb_resource()
+    table = dynamodb.Table('Django')
+
+    # Use a default email for testing
+    default_email = "test@example.com"
+
+    if request.method == 'POST':
+        data = request.POST
+        table.put_item(
+            Item={
+                'email': default_email,  # Use the default email
+                'metric': data.get('metric'),
+                'time': data.get('time'),
+                'value': data.get('value')
+            }
+        )
+
+    # Fetch all the metrics data from DynamoDB
+    response = table.scan()
+    metrics_data = {}
+    for item in response['Items']:
+        metric = item['metric']
+        if metric not in metrics_data:
+            metrics_data[metric] = []
+        metrics_data[metric].append(item)
+
+    for metric in metrics_data:
+        metrics_data[metric].sort(key=lambda x: x['time'], reverse=True)
 
     return render(request, 'metrics/display_metric_data.html', {'metrics_data': metrics_data})
