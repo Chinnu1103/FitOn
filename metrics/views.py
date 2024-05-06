@@ -5,28 +5,21 @@ import matplotlib.pyplot as plt
 from asgiref.sync import sync_to_async
 import asyncio
 import datetime
-
+import pandas as pd
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
     "resting_heart_rate": "com.google.heart_rate.bpm",
     "steps": "com.google.step_count.delta",
     "sleep": "com.google.sleep.segment",
-    "exercise": "com.google.activity.exercise"
+    "activity": "com.google.activity.segment"
 }
 
-dataSources = {
-    "heart_rate": "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm",
-    "resting_heart_rate": "derived:com.google.heart_rate.bpm:com.google.android.gms:resting_heart_rate<-merge_heart_rate_bpm",
-    "steps": "derived:com.google.step_count.delta:com.google.android.gms:estimated_steps",
-    "sleep": "derived:com.google.sleep.segment:com.google.android.gms:merged",
-    "exercise": "derived:com.google.activity.exercise:com.google.android.gms:merged"
-}
-
+df = pd.read_csv('google_fit_activity_types.csv')
 
 #function to convert miliseconds to Day
 def parse_millis(millis):
-    return datetime.datetime.fromtimestamp(int(millis) / 1000).strftime('%Y-%m-%d')
+    return datetime.datetime.fromtimestamp(int(millis) / 1000).strftime("%b %d, %I %p")
 
 def list_metrics(request):
     return render(request, 'metrics/metric_list.html')
@@ -56,10 +49,13 @@ def heartrate_plot(data):
         if len(record['dataset'][0]['point'])==0:
             continue
         else:
+            print(record['dataset'][0]['point'][0]['value'])
             d={}
             d['start']=parse_millis(record['startTimeMillis'])
             d['end']=parse_millis(record['endTimeMillis'])
-            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            d['count']=float(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            d['min']=int(record['dataset'][0]['point'][0]['value'][1]['fpVal'])
+            d['max']=int(record['dataset'][0]['point'][0]['value'][2]['fpVal'])
             heart_data.append(d)
 
     # Pass the plot path to the template
@@ -86,36 +82,78 @@ def resting_heartrate_plot(data):
 def sleep_plot(data):
     print("inside sleep function\n")
     sleep_data=[]
-    for record in data['bucket']:
-        if len(record['dataset'][0]['point'])==0:
-            continue
-        else:
-            d={}
-            d['start']=parse_millis(record['startTimeMillis'])
-            d['end']=parse_millis(record['endTimeMillis'])
-            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
-            sleep_data.append(d)
+    for record in data['session']:
+        d={}
+        d['start']=parse_millis(record['startTimeMillis'])
+        d['end']=parse_millis(record['endTimeMillis'])
+        d['count']=(int(record['endTimeMillis']) - int(record['startTimeMillis']))/1000/60/60
+        sleep_data.append(d)
 
     # Pass the plot path to the template
     context = {'sleep_data_json': sleep_data}
-    return context
+    return context   
 
-async def fetch_metric_data(service, metric, total_data):
+def activity_plot(data):
+    print("inside activity function\n")
+    activity_data={}
+    for record in data['bucket'][0]['dataset'][0]['point']:
+        print(record)
+        act = df.loc[df['Integer'] == record['value'][0]['intVal']]['Activity Type'].values[0]
+        duration = round(int(record['value'][1]['intVal'])/1000/60, 2)
+        
+        if act in activity_data:
+            activity_data[act] += duration
+        else:
+            activity_data[act] = duration
     
-    end_time = datetime.datetime.now().replace(hour=23, minute=59, second=59)
-    start_time = end_time - datetime.timedelta(days=10)
+    activity_data = sorted(activity_data.items(), key=lambda x: x[1], reverse=True)
+    activity_data = activity_data[:10]
+
+    # Pass the plot path to the template
+    context = {'activity_data_json': activity_data}
+    return context  
+
+async def fetch_metric_data(service, metric, total_data, duration, frequency):
+    
+    end_time = datetime.datetime.now()
+    
+    if duration == "day":
+        start_time = end_time - datetime.timedelta(hours=23, minutes=59)
+    elif duration == "week":
+        start_time = end_time - datetime.timedelta(days=6, hours=23, minutes=59)
+    elif duration == "month":
+        start_time = end_time - datetime.timedelta(days=29, hours=23, minutes=59)
+    elif duration == "quarter":
+        start_time = end_time - datetime.timedelta(days=89, hours=23, minutes=59)
+    
+    if frequency == "hourly":
+        bucket = 3600000
+    elif frequency == "daily":
+        bucket = 86400000
+    elif frequency == "weekly":
+        bucket = 604800000
+    elif frequency == "monthly":
+        bucket = 2592000000
+    
     print(start_time.timestamp())
     print(end_time.timestamp())
     
-    data = service.users().dataset().aggregate(userId='me', body={
-        "aggregateBy": [{
-            "dataTypeName": dataTypes[metric],
-            "dataSourceId": dataSources[metric]
-        }],
-        "bucketByTime": {"durationMillis": 86400000},
-        "startTimeMillis": int(start_time.timestamp()) * 1000,
-        "endTimeMillis": int(end_time.timestamp()) * 1000,
-    }).execute()
+    start_date = start_time.strftime('%Y-%m-%d')
+    end_date = end_time.strftime('%Y-%m-%d')
+    
+    if metric == "sleep":
+        data = service.users().sessions().list(userId='me', activityType=72, startTime=f'{start_date}T00:00:00.000Z', endTime=f'{end_date}T23:59:59.999Z').execute()
+    
+    else:        
+        data = service.users().dataset().aggregate(userId='me', body={
+            "aggregateBy": [{
+                "dataTypeName": dataTypes[metric]
+            }],
+            "bucketByTime": {"durationMillis": bucket},
+            "startTimeMillis": int(start_time.timestamp()) * 1000,
+            "endTimeMillis": int(end_time.timestamp()) * 1000,
+        }).execute()
+    
     if metric=="heart_rate":
         context=heartrate_plot(data)
         total_data['heartRate']=context
@@ -128,6 +166,9 @@ async def fetch_metric_data(service, metric, total_data):
     elif metric=="sleep":
         context=sleep_plot(data)
         total_data['sleep']=context
+    elif metric=="activity":
+        context=activity_plot(data)
+        total_data['activity']=context
 
 @sync_to_async
 def get_credentials(request):
@@ -137,7 +178,7 @@ def get_credentials(request):
     
     return None
 
-async def fetch_all_metric_data(request):
+async def fetch_all_metric_data(request, duration, frequency):
     total_data = {}
     credentials = await get_credentials(request)
     if credentials:
@@ -145,7 +186,7 @@ async def fetch_all_metric_data(request):
             service = build('fitness', 'v1', credentials=credentials)
             tasks = []
             for metric in dataTypes.keys():
-                tasks.append(fetch_metric_data(service, metric, total_data))
+                tasks.append(fetch_metric_data(service, metric, total_data, duration, frequency))
             
             await asyncio.gather(*tasks)
         except Exception as e:
@@ -159,7 +200,17 @@ async def fetch_all_metric_data(request):
         
 
 async def get_metric_data(request):
-    total_data = await fetch_all_metric_data(request)
+    
+    duration = 'week'
+    frequency = 'daily'
+    
+    if request.GET.get('data_drn'):
+        duration = request.GET.get('data_drn')
+    
+    if request.GET.get('data_freq'):
+        frequency = request.GET.get('data_freq')    
+    
+    total_data = await fetch_all_metric_data(request, duration, frequency)
     
     context = {'data': total_data}
     print(total_data)

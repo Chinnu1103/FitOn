@@ -9,3 +9,4 @@ requests==2.27
 Pillow
 matplotlib
 asyncio
+pandas

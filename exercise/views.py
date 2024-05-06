@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from exercise.models import Exercise, MuscleGroup
+import re
 
 def list_exercises(request):
     name = request.GET.get('exercise_name')
@@ -45,5 +46,14 @@ def list_exercises(request):
     current_page_number = exercises.number
     page_range = paginator.page_range
     num_pages = paginator.num_pages
+    
+    image_urls = []
+    for ex in exercises:
+        name = re.sub(r"[^a-zA-Z0-9-(),']", '_', ex.name)
+        url = {
+            "url_0": f"https://fiton-exercise-images.s3.amazonaws.com/exercise_images/{name}_0.jpg",
+            "url_1": f"https://fiton-exercise-images.s3.amazonaws.com/exercise_images/{name}_1.jpg"
+        }
+        image_urls.append(url)
 
-    return render(request, 'exercise/exercise_list.html', {'exercises': exercises, 'filter_dict': filter_dict, 'current_page_number': current_page_number, 'page_range': page_range, 'num_pages': num_pages})
+    return render(request, 'exercise/exercise_list.html', {'exercises': zip(exercises, image_urls), 'filter_dict': filter_dict, 'current_page_number': current_page_number, 'page_range': page_range, 'num_pages': num_pages})

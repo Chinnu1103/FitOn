@@ -25,18 +25,23 @@
         <div class="filter-right-column container col-6 pl-5">
             <form method="get" class="filter-form" id="filter-form">
                 <fieldset id="filter-fieldset">
-                    <legend>FILTERS</legend>
+                    <legend>
+                        <div class="row">
+                            <div class="col text-left">FILTERS</div>
+                            <button class="col-md-2 text-right btn btn-primary text-center mr-3">Apply</button>
+                        </div>
+                    </legend>
                     <hr class="mt-0 mb-3"/>
                     <div class="row">
                         <div class="col">
                             <div class="form-group">
                                 <label for="data_length">Data Duration:</label>
-                                <select class="custom-select" id="metric_list" name="metric_list">
-                                    <option value="hour">Past Hour</option>
+                                <select class="custom-select" id="data_drn" name="data_drn" onchange="handleDurationChange()">
+                                    {% comment %} <option value="hour">Past Hour</option> {% endcomment %}
                                     <option value="day">Past Day</option>
                                     <option value="week">Past Week</option>
                                     <option value="month">Past Month</option>
-                                    <option value="year">Past Year</option>
+                                    <option value="quarter">Past Quarter</option>
                                 </select>
                             </div>
                         </div>
@@ -44,12 +49,15 @@
                             <div class="form-group">
                                 <label for="data_freq">Data Frequency:</label>
                                 <select class="custom-select" id="data_freq" name="data_freq">
+                                    {% comment %} <option value="per_min">Per Minute</option> {% endcomment %}
                                     <option value="hourly">Per Hour</option>
                                     <option value="daily">Per Day</option>
                                     <option value="weekly">Per Week</option>
-                                    <option value="dumbbell">Dumbbell</option>
+                                    <option value="monthly">Per Month</option>
                                 </select>
                             </div>
+                        </div>
+                        <div class="col">
                         </div>
                     </div>
                 </fieldset>
@@ -59,24 +67,47 @@
     </div>
 
     <div class="container-fluid">
-        <div class="row">
+        <div class="row my-5">
             <div class="col-md-6">
-                <h2>Steps Count per Day</h2>
+                <h2>Steps Count</h2>
                 <canvas id="stepsChart"></canvas>
             </div>
             <div class="col-md-6">
-                <h2>Heart Rate per Day</h2>
+                <h2>Heart Rate</h2>
                 <canvas id="heartRateChart"></canvas>
             </div>
         </div>
-        <div class="row">
-            <div class="col-md-6">
-                <h2>Resting Heart Rate per Day</h2>
-                <canvas id="restingHeartRateChart"></canvas>
-            </div>
-            <div class="col-md-6">
+        <div class="row my-5">
+            <div class="col-md-6 container" style="height: 450px; margin-bottom: 50px">
                 <h2>Sleep Data</h2>
                 <canvas id="sleepChart"></canvas>
+            </div>
+            <div class="col-md-6">
+                <h2>Body Fitness</h2>
+            </div>
+        </div>
+        <div class="row my-5">
+            <div class="col-md-6">
+                <h2>Blood Oxygen Levels</h2>
+            </div>
+            <div class="col-md-6">
+                <h2>Top Activities</h2>
+                <table border="1">
+                    <thead>
+                        <tr>
+                            <th>Exercise</th>
+                            <th>Duration (in minutes)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for activity_data in data.activity.activity_data_json %}
+                        <tr>
+                            <td>{{ activity_data.0 }}</td>
+                            <td>{{ activity_data.1 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

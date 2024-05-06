@@ -116,15 +116,15 @@
                 </div>
 
                 <div id="display_ex_container" class="container-fluid">
-                    {% for exercise in exercises %}
+                    {% for exercise, img in exercises %}
                         {% if forloop.first or forloop.index0|divisibleby:2 %}
                             <div class="exercise-card-row">
                         {% endif %}
 
                         <div class="exercise-card mx-2">
                             <div class="p-1" style="display: flex; flex-direction: column;">
-                                <img src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
-                                <img class="mt-1" src="{{ exercise.image.url }}" alt="{{ exercise.name }}">
+                                <img src="{{ img.url_0 }}" alt="{{ exercise.name }}">
+                                <img class="mt-1" src="{{ img.url_1 }}" alt="{{ exercise.name }}">
                             </div>
                             <div class="exercise-details ml-3 row">
                                 <h3 class="mb-4 container-fluid my-0" style="padding-right: 120px;"><strong>{{ exercise.name }}</strong></h3>
