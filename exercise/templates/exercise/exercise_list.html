@@ -146,7 +146,19 @@
                                 </div>
                             </div>
                             <div style="position: relative;">
-                                <button id="add_to_selected">Add to selected</button>
+                                <button class="add_to_selected"
+                                    data-id="{{ exercise.id }}"
+                                    data-instructions="{{ exercise.instructions }}"
+                                    data-name="{{ exercise.name }}"
+                                    data-equipment="{{ exercise.equipment }}"
+                                    data-level="{{ exercise.level }}"
+                                    data-primary="{% for muscle in exercise.primaryMuscles.all %}
+                                                    {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}"
+                                    data-secondary="{% for muscle in exercise.secondaryMuscles.all %}
+                                                {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}">
+                                    Add to selected</button>
                             </div>
                         </div>
 
@@ -187,33 +199,30 @@
                 <hr>
                 <button id="download_exercises">Download Exercise Plan</button>
                 <div id='selected_ex_container' class="mt-5">
-                    {% for exercise in exercises %}
-                    <div class="selected-card mx-2">
-                        <div class="exercise-details">
-                            <h3 class="mb-4"><strong>{{ exercise.name }}</strong></h3>
-                            <p><strong>Level:</strong> {{ exercise.level }}</p>
-                            <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
-                            <p><strong>Primary Muscles:</strong> 
-                                {% for muscle in exercise.primaryMuscles.all %}
-                                    {{ muscle.name }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </p>
-                            <p><strong>Secondary Muscles:</strong> 
-                                {% for muscle in exercise.secondaryMuscles.all %}
-                                    {{ muscle.name }}{% if not forloop.last %}, {% endif %}
-                                {% endfor %}
-                            </p>
+                    {% for exercise in selected_exercises %}
+                        <div class="selected-card mx-2" data-id="{{ exercise.id }}" data-instructions="{{ exercise.instructions }}">
+                            <div class="exercise-details">
+                                <h3 class="mb-4"><strong>{{ exercise.name }}</strong></h3>
+                                <p><strong>Level:</strong> {{ exercise.level }}</p>
+                                <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
+                                <p><strong>Primary Muscles:</strong> 
+                                    {% for muscle in exercise.primaryMuscles.all %}
+                                        {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+                                <p><strong>Secondary Muscles:</strong> 
+                                    {% for muscle in exercise.secondaryMuscles.all %}
+                                        {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </p>
+                            </div>
+                            <button class="remove_selected" data-id="{{ exercise.id }}">X</button>
                         </div>
-                        <button id="remove_selected">X</button>
-                        <div style="position: relative;">
-                            
-                        </div>
-                    </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
-    </div>``
+    </div>
 
 </body>
 

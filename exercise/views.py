@@ -2,6 +2,7 @@ from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from exercise.models import Exercise, MuscleGroup
 import re
+from django.core.serializers import serialize
 
 def list_exercises(request):
     name = request.GET.get('exercise_name')
@@ -9,7 +10,8 @@ def list_exercises(request):
     equipment = request.GET.get('exercise_equipment')
     muscle = request.GET.get('exercise_muscle')
     category = request.GET.get('exercise_category')
-
+    
+    selected_exercises = request.GET.getlist('exercise')
     exercises = Exercise.objects.all()
 
     if name:
@@ -55,5 +57,10 @@ def list_exercises(request):
             "url_1": f"https://fiton-exercise-images.s3.amazonaws.com/exercise_images/{name}_1.jpg"
         }
         image_urls.append(url)
+    
+    if selected_exercises and len(selected_exercises):
+        selected_exercises = Exercise.objects.filter(id__in=selected_exercises)
+    else:
+        selected_exercises = []
 
-    return render(request, 'exercise/exercise_list.html', {'exercises': zip(exercises, image_urls), 'filter_dict': filter_dict, 'current_page_number': current_page_number, 'page_range': page_range, 'num_pages': num_pages})
+    return render(request, 'exercise/exercise_list.html', {'exercises': zip(exercises, image_urls), 'filter_dict': filter_dict, 'current_page_number': current_page_number, 'page_range': page_range, 'num_pages': num_pages, 'selected_exercises': selected_exercises})

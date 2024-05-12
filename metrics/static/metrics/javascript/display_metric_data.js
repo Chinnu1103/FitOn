@@ -186,3 +186,36 @@ const sleepChart = new Chart(sleepCtx, {
         }
     }}
 );
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("DOM fully loaded and parsed");
+
+    var modal = document.getElementById("dataModal");
+    var btn = document.getElementById("addDataButton");
+    var span = document.getElementsByClassName("close")[0];
+
+    if (btn) {
+        btn.onclick = function () {
+            console.log("Button clicked");
+            modal.style.display = "block";
+        };
+    } else {
+        console.log("Button element not found");
+    }
+
+    if (span) {
+        span.onclick = function () {
+            console.log("Close span clicked");
+            modal.style.display = "none";
+        };
+    } else {
+        console.log("Close span element not found");
+    }
+
+    window.onclick = function (event) {
+        if (event.target == modal) {
+            console.log("Click on window outside modal");
+            modal.style.display = "none";
+        }
+    };
+});

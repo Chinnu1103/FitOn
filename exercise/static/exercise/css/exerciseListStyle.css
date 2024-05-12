@@ -229,7 +229,7 @@ legend {
   flex-wrap: wrap;
 }
 
-#add_to_selected {
+.add_to_selected {
   position: absolute; /* Set position to absolute */
   top: 5; /* Align to the top */
   right: 5; /* Align to the right */
@@ -249,7 +249,7 @@ legend {
   width: 100px;
 }
 
-#remove_selected {
+.remove_selected {
   position: absolute; /* Set position to absolute */
   top: 5; /* Align to the top */
   right: 5; /* Align to the right */

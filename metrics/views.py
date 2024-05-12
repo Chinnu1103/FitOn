@@ -6,12 +6,14 @@ from asgiref.sync import sync_to_async
 import asyncio
 import datetime
 import pandas as pd
+from aws_conf import get_dynamodb_resource
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
     "resting_heart_rate": "com.google.heart_rate.bpm",
     "steps": "com.google.step_count.delta",
     "sleep": "com.google.sleep.segment",
+    "oxygen": "com.google.oxygen_saturation",
     "activity": "com.google.activity.segment"
 }
 
@@ -113,9 +115,26 @@ def activity_plot(data):
     context = {'activity_data_json': activity_data}
     return context  
 
+def oxygen_plot(data):
+    print("inside oxygen saturation function\n")
+    oxygen_data=[]
+    for record in data['bucket']:
+        if len(record['dataset'][0]['point'])==0:
+            continue
+        else:
+            d={}
+            d['start']=parse_millis(record['startTimeMillis'])
+            d['end']=parse_millis(record['endTimeMillis'])
+            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            oxygen_data.append(d)
+
+    # Pass the plot path to the template
+    context = {'oxygen_data_json': oxygen_data}
+    return context
+
 async def fetch_metric_data(service, metric, total_data, duration, frequency):
     
-    end_time = datetime.datetime.now()
+    end_time = datetime.datetime.now() - datetime.timedelta(minutes=1)
     
     if duration == "day":
         start_time = end_time - datetime.timedelta(hours=23, minutes=59)
@@ -169,6 +188,9 @@ async def fetch_metric_data(service, metric, total_data, duration, frequency):
     elif metric=="activity":
         context=activity_plot(data)
         total_data['activity']=context
+    elif metric=="oxygen":
+        context=oxygen_plot(data)
+        total_data['oxygen']=context
 
 @sync_to_async
 def get_credentials(request):
@@ -215,3 +237,38 @@ async def get_metric_data(request):
     context = {'data': total_data}
     print(total_data)
     return render(request, 'metrics/display_metric_data.html', context)
+
+def health_data_view(request):
+    dynamodb = get_dynamodb_resource()
+    table = dynamodb.Table('Django')
+
+    if request.user.is_authenticated:
+        print(request.user.id)
+    default_email = "test@example.com"
+
+    if request.method == 'POST':
+        data = request.POST
+        print(data)
+        table.put_item(
+            Item={
+                'email': default_email,  # Use the default email
+                'metric': data.get('metric'),
+                'time': data.get('time'),
+                'value': data.get('value')
+            }
+        )
+        return render(request, 'metrics/display_metric_data.html', {})
+
+    # Fetch all the metrics data from DynamoDB
+    response = table.scan()
+    metrics_data = {}
+    for item in response['Items']:
+        metric = item['metric']
+        if metric not in metrics_data:
+            metrics_data[metric] = []
+        metrics_data[metric].append(item)
+
+    for metric in metrics_data:
+        metrics_data[metric].sort(key=lambda x: x['time'], reverse=True)
+
+    return render(request, 'metrics/display_metric_data.html', {'metrics_data': metrics_data})
