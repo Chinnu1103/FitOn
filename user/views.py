@@ -14,6 +14,7 @@ from django.template.loader import render_to_string
 from user.models import Choices, User
 from django.conf import settings
 import re
+import boto3
 
 SCOPES = [
     'https://www.googleapis.com/auth/fitness.activity.read', 
@@ -81,21 +82,51 @@ def register(request):
         if user_exists(form_data["email"]):
             messages.error(request, "User already exists! Please go to login page.")
             return HttpResponseRedirect(reverse("user:user_registration"))
-        try:
-            usr = create_django_user(
-                form_data["email"], form_data["password"], form_data["name"]
-            )
-            del form_data["password"]
-            create_user_profile(**form_data)
-            login(request, usr)
-            print("User saved successfully")
-        except Exception as e:
-            messages.error(
-                request,
-                "Failed to add new user! Invalid details / User already exists.",
-            )
-            print(e)
-            return render(request, template_name="user/user_registration.html")
+        # try:
+        usr = create_django_user(
+            form_data["email"], form_data["password"], form_data["name"]
+        )
+        pwd = form_data["password"]
+        del form_data["password"]
+        create_user_profile(**form_data)
+        login(request, usr)
+        print("User saved successfully")
+        client = boto3.client('cognito-idp', region_name='us-east-1')
+        
+        response = client.sign_up(
+            ClientId='48c6righn4ev7j9pqksehr4f1o',
+            Username=form_data["email"],
+            Password=pwd,
+            UserAttributes=[
+                {
+                    'Name': 'custom:city',
+                    'Value': form_data["city"]
+                },
+                {
+                    'Name': 'custom:height',
+                    'Value': form_data["height"]
+                },
+                {
+                    'Name': 'custom:phone',
+                    'Value': form_data["phone"]
+                },
+                {
+                    'Name': 'custom:weight',
+                    'Value': form_data["weight"]
+                },
+                # Add more attributes as needed
+            ]
+        )
+        
+        print(response)
+            
+        # except Exception as e:
+        #     messages.error(
+        #         request,
+        #         "Failed to add new user! Invalid details / User already exists.",
+        #     )
+        #     print(e)
+        #     return render(request, template_name="user/user_registration.html")
 
         return HttpResponseRedirect(
             reverse("user:account")

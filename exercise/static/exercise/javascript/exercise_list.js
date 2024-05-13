@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", function() {
     cross.forEach(function(button) {
         selectedExercises.push(button.getAttribute("data-id"));
         button.addEventListener("click", function() {
-            removeExercise(this);
+            removeExercise(button.getAttribute("data-id"));
         });
     });
 
