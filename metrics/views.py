@@ -116,7 +116,6 @@ def activity_plot(data):
     print("inside activity function\n")
     activity_data={}
     for record in data['session']:
-        print(record)
         activity_name = df.loc[df['Integer'] == record['activityType']]['Activity Type'].values
         if len(activity_name) == 0:
             continue

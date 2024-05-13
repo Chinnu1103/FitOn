@@ -71,7 +71,7 @@ let sleepDates = sleepData.map(entry => entry.start);
 let sleepCount = sleepData.map(entry => entry.count);
 
 let oxygenDates = oxygenData.map(entry => entry.start);
-let oxygenCount = sleepData.map(entry => entry.count);
+let oxygenCount = oxygenData.map(entry => entry.count);
 
 let glucoseDates = glucoseData.map(entry => entry.start);
 let glucoseCount = glucoseData.map(entry => entry.count);
