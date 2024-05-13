@@ -131,7 +131,10 @@ GOOGLEFIT_TOKEN_URI = "https://accounts.google.com/o/oauth2/token"
 GOOGLEFIT_CLIENT_ID = os.getenv("GOOGLEFIT_CLIENT_ID")
 GOOGLEFIT_CLIENT_SECRET = os.getenv("GOOGLEFIT_CLIENT_SECRET")
 
-BASE_URL = "http://127.0.0.1:8000"
+DYNAMO_ID = os.getenv("DYNAMO_ID")
+DYNAMO_KEY = os.getenv("DYNAMO_KEY")
+
+BASE_URL = "http://127.0.0.1:8000" if DEBUG else "http://fiton-prod.eba-ytjhvvmm.us-west-2.elasticbeanstalk.com"
 REDIRECT_URI = os.getenv("REDIRECT_URL", BASE_URL + "/user/callback/")
 
 GOOGLEFIT_CLIENT_CONFIG = {

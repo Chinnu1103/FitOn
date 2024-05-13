@@ -6,12 +6,23 @@ from asgiref.sync import sync_to_async
 import asyncio
 import datetime
 import pandas as pd
-from aws_conf import get_dynamodb_resource
 from user.models import User
 import random
 import requests
 import ast
 import pytz
+import boto3
+from django.conf import settings
+
+def get_dynamodb_resource():
+    id = settings.DYNAMO_ID
+    key = settings.DYNAMO_KEY
+    return boto3.resource(
+        'dynamodb',
+        region_name='us-east-2',
+        aws_access_key_id=id,
+        aws_secret_access_key=key
+    )
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
