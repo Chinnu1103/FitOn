@@ -60,8 +60,8 @@ let stepsCount = stepsData.map(entry => entry.count);
 // Extract dates and heart rate count
 let heartRateDates = heartRateData.map(entry => entry.start);
 let heartRateCount = heartRateData.map(entry => entry.count);
-let hearRateMin = heartRateData.map(entry => entry.min);
-let hearRateMax = heartRateData.map(entry => entry.max);
+let hearRateMin = heartRateData.map(entry => entry.min ? entry.min : entry.count);
+let hearRateMax = heartRateData.map(entry => entry.max ? entry.max : entry.count);
 
 // Extract dates and resting heart rate count
 let restingHeartRateDates = restingHeartRateData.map(entry => entry.start);
@@ -128,14 +128,14 @@ const heartRateChart = new Chart(heartRateCtx, {
     data: {
         labels: heartRateDates,
         datasets: [{
-            label: 'Min Heart Rate',
+            label: 'Max Heart Rate',
             data: hearRateMin,
             borderColor: 'rgba(55, 173, 221, 1.0)',
             backgroundColor: 'rgba(55, 173, 221, 0.6)',
             borderWidth: 2,
             fill: false
         }, {
-            label: 'Max Heart Rate',
+            label: 'Min Heart Rate',
             data: hearRateMax,
             borderColor: 'rgba(55, 173, 221, 1.0)',
             backgroundColor: 'rgba(55, 173, 221, 0.6)',
@@ -191,7 +191,7 @@ const sleepChart = new Chart(sleepCtx, {
     data: {
         labels: sleepDates,
         datasets: [{
-            label: 'Sleep Hours',
+            label: 'Sleep Score',
             data: sleepCount,
             borderColor: '#990f02',
             borderWidth: 2,
@@ -281,18 +281,18 @@ document.addEventListener('DOMContentLoaded', function () {
 const bodyFitnessChart = new Chart(bodyFitnessCtx, {
     type: 'line',
     data: {
-        labels: glucoseDates.concat(pressureDates),
+        labels: glucoseDates,
         datasets: [{
             label: 'Blood Glucose',
             data: glucoseCount,
-            borderColor: 'rgba(55, 173, 221, 1.0)',
+            borderColor: 'green',
             backgroundColor: 'rgba(55, 173, 221, 0.6)',
             borderWidth: 2,
             fill: false
         }, {
             label: 'Blood Pressure',
             data: pressureCount,
-            borderColor: 'rgba(55, 173, 221, 1.0)',
+            borderColor: 'green',
             backgroundColor: 'rgba(55, 173, 221, 0.6)',
             borderWidth: 2,
             fill: false

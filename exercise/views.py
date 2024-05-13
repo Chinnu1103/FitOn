@@ -67,12 +67,13 @@ def list_exercises(request):
     body = f"26, {gender}, {user.height}, {user.weight}, 70, 5000"
     url = "https://2pfeath3sg.execute-api.us-east-1.amazonaws.com/dev/recommend"
     response = requests.post(url, json=body).text
-
+    print(response)
     start_index = response.index('[')
     end_index = response.rindex(']')
     list_string = response[start_index:end_index + 1]
     inference_list = eval(list_string)[0]
-    print(inference_list)
+    if(type(inference_list) == int):
+        inference_list = [inference_list]
     inference_list = [max(50+i, i) for i in inference_list]
     
     selected_exercises = request.GET.getlist('exercise')

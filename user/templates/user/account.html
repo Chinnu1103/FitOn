@@ -63,7 +63,10 @@
             <!-- name display part -->
             <div class="name-display container" style="display: flex; justify-content: space-between;align-items: baseline;">
                 <span>{{login_user.name}}</span>
-                <button class='btn btn-success' style="height"><a href="{% url 'user:authorize_google_fit' %}" style="color: white;">Sign In using Google</a></button>
+                <div>
+                    <button id="summary_report" class='btn btn-primary'>Send Summary Report</button>
+                    <button class='btn btn-success'><a href="{% url 'user:authorize_google_fit' %}" style="color: white;">Sign In using Google</a></button>
+                </div>
             </div>
 
             <!-- user info -->

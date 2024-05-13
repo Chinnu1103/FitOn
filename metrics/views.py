@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -13,16 +14,18 @@ import ast
 import pytz
 import boto3
 from django.conf import settings
+from aws_conf import get_dynamodb_resource
+from collections import defaultdict
 
-def get_dynamodb_resource():
-    id = settings.DYNAMO_ID
-    key = settings.DYNAMO_KEY
-    return boto3.resource(
-        'dynamodb',
-        region_name='us-east-2',
-        aws_access_key_id=id,
-        aws_secret_access_key=key
-    )
+# def get_dynamodb_resource():
+#     id = settings.DYNAMO_ID
+#     key = settings.DYNAMO_KEY
+#     return boto3.resource(
+#         'dynamodb',
+#         region_name='us-east-2',
+#         aws_access_key_id=id,
+#         aws_secret_access_key=key
+#     )
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
@@ -184,7 +187,110 @@ def pressure_plot(data):
     context = {'pressure_data_json': oxygen_data}
     return context
 
-async def fetch_metric_data(service, metric, total_data, duration, frequency):
+def get_group_key(time, frequency):
+    """Adjusts start and end times based on frequency."""
+    if frequency == 'hourly':
+        start = time.replace(minute=0, second=0, microsecond=0)
+        end = start + datetime.timedelta(hours=1)
+    elif frequency == 'daily':
+        start = time.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + datetime.timedelta(days=1)
+    elif frequency == 'weekly':
+        start = time - datetime.timedelta(days=time.weekday())
+        start = start.replace(hour=0, minute=0, second=0, microsecond=0)
+        end = start + datetime.timedelta(days=7)
+    elif frequency == 'monthly':
+        start = time.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end = start + datetime.timedelta(days=(time.replace(month=time.month % 12 + 1, day=1) - time).days)
+    else:
+        start = time  # Fallback to the exact time if frequency is unrecognized
+        end = time
+
+    return start, end
+
+def process_dynamo_data(items, frequency):
+    # Dictionary to hold the data grouped by date
+    print("Items in dictionary", items)
+    date_groups = defaultdict(list)
+
+    # Process each item
+    for item in items:
+        time = datetime.datetime.strptime(item['time'], '%Y-%m-%dT%H:%M')
+        start, end = get_group_key(time, frequency)
+        start_key = start.strftime('%b %d, %I %p')
+        end_key = end.strftime('%b %d, %I %p')
+        value = float(item['value'])
+        date_groups[(start_key, end_key)].append(value)
+
+
+    # Prepare the final data structure
+    result = []
+
+    for (start_key, end_key), values in date_groups.items():
+        avg_count = sum(values) / len(values) if values else 0
+        result.append({
+            'start': start_key,
+            'end': end_key,
+            'count': avg_count,
+        })
+
+    return {'Items': result}
+
+
+def merge_data(existing_data, new_data, frequency):
+    """
+    Merges new data into existing data based on overlapping time ranges defined by frequency.
+    
+    Parameters:
+    existing_data (list): The existing list of data points for a metric.
+    new_data (list): The new data points to be merged.
+    frequency (str): The frequency of data collection ('hourly', 'daily', 'weekly', 'monthly').
+
+    Returns:
+    list: Updated list of data points after merging.
+    """
+    # Helper to parse datetime from string
+    def parse_time(time_str):
+        return datetime.datetime.strptime(time_str, '%b %d, %I %p')
+
+    # Create index of existing data by start time for quick access
+    data_index = {}
+    for item in existing_data:
+        start, end = get_group_key(parse_time(item['start']), frequency)
+        data_index[start] = item
+        item['end_range'] = end  # Temporarily store the range end to use in comparisons
+
+    # Process each new data point
+    for new_item in new_data:
+        new_start, new_end = get_group_key(parse_time(new_item['start']), frequency)
+        if new_start in data_index:
+            # There's an overlap, so update the existing entry
+            existing_item = data_index[new_start]
+            # Averaging the counts, updating mins and maxs
+            existing_item['count'] = (existing_item['count'] + new_item['count']) / 2
+            existing_item['min'] = min(existing_item['min'], new_item['min'])
+            existing_item['max'] = max(existing_item['max'], new_item['max'])
+        else:
+            # No overlap, append this new item
+            new_item['end'] = new_end.strftime('%b %d, %I %p')  # Format end time for consistency
+            existing_data.append(new_item)
+
+    # Remove temporary 'end_range' from existing items
+    for item in existing_data:
+        item.pop('end_range', None)
+    
+    existing_data.sort(key=lambda x: parse_time(x['start']))
+    
+    combined_data = []
+    for obj in existing_data:
+        if not combined_data or parse_time(combined_data[-1]['start']) != parse_time(obj['start']):
+            combined_data.append(obj)
+        else:
+            combined_data[-1]['count'] += obj['count']
+
+    return combined_data
+
+async def fetch_metric_data(service, metric, total_data, duration, frequency, email):
     
     end_time = datetime.datetime.now() - datetime.timedelta(minutes=1)
     
@@ -252,6 +358,48 @@ async def fetch_metric_data(service, metric, total_data, duration, frequency):
     elif metric=="pressure":
         context=pressure_plot(data)
         total_data['pressure']=context
+    table = get_dynamodb_resource().Table('Django')
+    response = table.scan(
+        FilterExpression="metric = :m AND #t BETWEEN :start AND :end AND email = :email",
+        ExpressionAttributeNames={"#t": "time"},
+        ExpressionAttributeValues={
+            ":m": metric,
+            ":email": email,
+            ":start": start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
+            ":end": end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+        }
+    )
+    
+    print("printing processed data from DynamoDB--------------------------------")
+
+    processed_data = process_dynamo_data(response['Items'], frequency)
+    # print("processed data", processed_data)
+
+    # Assuming 'processed_data' is structured similarly for each metric
+# and 'frequency' is defined appropriately for the context in which this is run
+
+    if metric == "heart_rate":
+        print("heart rate")
+        total_data['heartRate']['heart_data_json'] = merge_data(total_data['heartRate']['heart_data_json'], processed_data['Items'], frequency)
+    elif metric == "steps":
+        print("steps")
+        total_data['steps']['steps_data_json'] = merge_data(total_data['steps']['steps_data_json'], processed_data['Items'], frequency)
+    elif metric == "resting_heart_rate":
+        print("resting heart rate")
+        total_data['restingHeartRate']['resting_heart_data_json'] = merge_data(total_data['restingHeartRate']['resting_heart_data_json'], processed_data['Items'], frequency)
+    elif metric == "sleep":
+        print("sleep")
+        total_data['sleep']['sleep_data_json'] = merge_data(total_data['sleep']['sleep_data_json'], processed_data['Items'], frequency)
+    elif metric == "activity":
+        print("activity")
+        # final = merge_data(total_data['activity']['activity_data_json'], processed_data['Items'], frequency)
+        # print(final) #
+        
+    elif metric == "oxygen":
+        print("oxygen")
+        total_data['oxygen']['oxygen_data_json'] = merge_data(total_data['oxygen']['oxygen_data_json'], processed_data['Items'], frequency)
+    else:
+        print("Unknown metric")
 
 @sync_to_async
 def get_credentials(request):
@@ -295,6 +443,47 @@ def get_sleep_scores(total_data, email):
     
     return total_data
 
+async def format_bod_fitness_data(total_data):
+    list1 = total_data["glucose"]["glucose_data_json"]
+    list2 = total_data["pressure"]["pressure_data_json"]
+    
+    def parse_date(date_str):
+        return datetime.datetime.strptime(date_str, '%b %d, %I %p')
+
+    # Extract all unique start dates from both lists
+    all_dates = set()
+    for item in list1 + list2:
+        all_dates.add(item['start'])
+
+    # Update list1
+    for date in all_dates:
+        found = False
+        for item in list1:
+            if item['start'] == date:
+                found = True
+                break
+        if not found:
+            list1.append({'start': date, 'end': date, 'count': 0})
+
+    # Update list2
+    for date in all_dates:
+        found = False
+        for item in list2:
+            if item['start'] == date:
+                found = True
+                break
+        if not found:
+            list2.append({'start': date, 'end': date, 'count': 0})
+
+    # Sort lists by start date
+    list1.sort(key=lambda x: parse_date(x['start']))
+    list2.sort(key=lambda x: parse_date(x['start']))
+    
+    total_data["glucose"]["glucose_data_json"] = list1
+    total_data["pressure"]["pressure_data_json"] = list2
+    
+    return total_data
+
 async def fetch_all_metric_data(request, duration, frequency):
     total_data = {}
     credentials, email = await get_credentials(request)
@@ -303,10 +492,11 @@ async def fetch_all_metric_data(request, duration, frequency):
         service = build('fitness', 'v1', credentials=credentials)
         tasks = []
         for metric in dataTypes.keys():
-            tasks.append(fetch_metric_data(service, metric, total_data, duration, frequency))
+            tasks.append(fetch_metric_data(service, metric, total_data, duration, frequency, email))
         
         await asyncio.gather(*tasks)
         total_data = await get_sleep_scores(total_data, email)
+        total_data = await format_bod_fitness_data(total_data)
                  
         # except Exception as e:
         #     print(e)
@@ -315,6 +505,7 @@ async def fetch_all_metric_data(request, duration, frequency):
     else:
         print("Not signed in Google")
     
+    print("total data: ", total_data)
     return total_data
         
 
@@ -350,7 +541,7 @@ def health_data_view(request):
                 'value': data.get('value')
             }
         )
-        return render(request, 'metrics/display_metric_data.html', {})
+        return redirect("metrics:get_metric_data")
 
     # Fetch all the metrics data from DynamoDB
     response = table.scan()
@@ -365,3 +556,62 @@ def health_data_view(request):
         metrics_data[metric].sort(key=lambda x: x['time'], reverse=True)
 
     return render(request, 'metrics/display_metric_data.html', {'metrics_data': metrics_data})
+
+async def send_report(request):
+    duration = 'week'
+    frequency = 'hourly'    
+    
+    total_data = await fetch_all_metric_data(request, duration, frequency)
+    _, email = await get_credentials(request)
+    
+    data = {
+        "email": email
+    }
+    
+    for metric in total_data:
+        if metric == "steps":
+            values = []
+            for val in total_data["steps"]["steps_data_json"]:
+                values.append({"Time": val["start"], "Average Steps": val["count"]})
+            data["steps"] = values
+        elif metric == "heartRate":
+            values = []
+            for val in total_data["heartRate"]["heart_data_json"]:
+                values.append({"Time": val["start"], "Average Heartrate": val["count"]})
+            data["heartrate"] = values
+        elif metric == "restingHeartRate":
+            values = []
+            for val in total_data["restingHeartRate"]["resting_heart_data_json"]:
+                values.append({"Time": val["start"], "Average Resting Heartrate": val["count"]})
+            data["restingHeartRate"] = values
+        elif metric == "sleep":
+            values = []
+            for val in total_data["sleep"]["sleep_data_json"]:
+                values.append({"Time": val["start"], "Sleep Score": val["count"]})
+            data["sleep"] = values
+        elif metric == "oxygen":
+            values = []
+            for val in total_data["oxygen"]["oxygen_data_json"]:
+                values.append({"Time": val["start"], "Average Oxygen Saturation": val["count"]})
+            data["oxygen_saturation"] = values
+        elif metric == "glucose":
+            values = []
+            for val in total_data["glucose"]["glucose_data_json"]:
+                values.append({"Time": val["start"], "Average Blood Glucose": val["count"]})
+            data["blood_glucose"] = values
+        elif metric == "pressure":
+            values = []
+            for val in total_data["pressure"]["pressure_data_json"]:
+                values.append({"Time": val["start"], "Average Blood Pressure": val["count"]})
+            data["blood_pressure"] = values
+        elif metric == "activity":
+            values = []
+            for val in total_data["activity"]["activity_data_json"]:
+                values.append({"Activity": val[0], "Duration(Min)": val[1]})
+            data["activities"] = values
+    
+    print(data)
+    
+    url = "https://2pfeath3sg.execute-api.us-east-1.amazonaws.com/dev/notification"
+    response = requests.post(url, json=data)
+    return JsonResponse({'message': 'Data received successfully'})

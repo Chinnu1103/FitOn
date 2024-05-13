@@ -17,9 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from metrics.views import get_metric_data
+from user.views import loginView
 
 urlpatterns = [
-    path("", get_metric_data),
+    path("", loginView),
     path("admin/", admin.site.urls),
     path("metrics/", include("metrics.urls")),
     path("user/", include("user.urls")),

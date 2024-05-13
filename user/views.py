@@ -50,7 +50,7 @@ def loginView(request):
         if user is not None:
             login(request, user)
             print("Login successful")
-            return redirect("user:home_dashboard")  # Redirect to the home page after login
+            return redirect("user:account")  # Redirect to the home page after login
 
         else:
             messages.error(request, "Incorrect Credentials! User does not exist!")
@@ -98,7 +98,7 @@ def register(request):
             return render(request, template_name="user/user_registration.html")
 
         return HttpResponseRedirect(
-            reverse("user:home_dashboard")
+            reverse("user:account")
         )  # redirect to home page after successful registration
     
     else:
