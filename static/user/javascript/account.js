@@ -1,18 +1,21 @@
 // button switch part
 document.addEventListener("DOMContentLoaded", function () {
-  var infoFields = document.querySelectorAll(".info-field");
-  var editBtn = document.querySelector(".edit-btn");
-  var saveBtn = document.querySelector(".save-btn");
-
-  // Edit button click event
-  editBtn.addEventListener("click", function () {
-    // Enable input fields and save button
-    infoFields.forEach(function (field) {
-      field.disabled = false;
+  document.getElementById("summary_report").addEventListener("click", function () {
+    $.ajax({
+      url: '/metrics/report/',
+      type: 'GET',
+      success: function(response){
+          // Handle success response
+          console.log(response);
+          alert("Request to send report submitted successfully!")
+      },
+      error: function(xhr, status, error){
+          console.error(error);
+          alert("Request to send report failed!")
+      }
     });
-    saveBtn.disabled = false;
-    editBtn.disabled = true;
   });
+
 });
 
 // appointment / consultation list part
@@ -90,39 +93,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-$(document).ready(function () {
-  const baseURL = window.location.origin;
-  $("#associatedHospital").autocomplete({
-    source: function (request, response) {
-      $.ajax({
-        url: baseURL + "/hospital/autocomplete/",
-        data: { search: request.term },
-        dataType: "json",
-        success: function (data) {
-          response(
-            $.map(data, function (item) {
-              return {
-                label: item.name.replace(/^:/, ""),
-                value: item.id,
-              };
-            })
-          );
-        },
-      });
-    },
-    select: function (event, ui) {
-      $("#associatedHospital").val(ui.item.label);
-      $("#selectedId").val(ui.item.value);
-      return false;
-    },
-    minLength: 2,
-    open: function (event, ui) {
-      // Add a custom class to the autocomplete menu for styling
-      $(".ui-autocomplete").css("width", $("#associatedHospital").outerWidth());
-      $(".ui-autocomplete").addClass("custom-autocomplete-menu");
-    },
-  });
-});
 
 // tab part
 function showContent(tabName) {
