@@ -7,6 +7,11 @@ import asyncio
 import datetime
 import pandas as pd
 from aws_conf import get_dynamodb_resource
+from user.models import User
+import random
+import requests
+import ast
+import pytz
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
@@ -14,7 +19,9 @@ dataTypes = {
     "steps": "com.google.step_count.delta",
     "sleep": "com.google.sleep.segment",
     "oxygen": "com.google.oxygen_saturation",
-    "activity": "com.google.activity.segment"
+    "activity": "com.google.activity.segment",
+    "glucose": "com.google.blood_glucose",
+    "pressure": "com.google.blood_pressure"
 }
 
 df = pd.read_csv('google_fit_activity_types.csv')
@@ -51,7 +58,6 @@ def heartrate_plot(data):
         if len(record['dataset'][0]['point'])==0:
             continue
         else:
-            print(record['dataset'][0]['point'][0]['value'])
             d={}
             d['start']=parse_millis(record['startTimeMillis'])
             d['end']=parse_millis(record['endTimeMillis'])
@@ -98,15 +104,17 @@ def sleep_plot(data):
 def activity_plot(data):
     print("inside activity function\n")
     activity_data={}
-    for record in data['bucket'][0]['dataset'][0]['point']:
+    for record in data['session']:
         print(record)
-        act = df.loc[df['Integer'] == record['value'][0]['intVal']]['Activity Type'].values[0]
-        duration = round(int(record['value'][1]['intVal'])/1000/60, 2)
-        
+        activity_name = df.loc[df['Integer'] == record['activityType']]['Activity Type'].values
+        if len(activity_name) == 0:
+            continue
+        act=activity_name[0]
+        duration=(int(record['endTimeMillis']) - int(record['startTimeMillis']))/1000/60        
         if act in activity_data:
-            activity_data[act] += duration
+            activity_data[act] += int(duration)
         else:
-            activity_data[act] = duration
+            activity_data[act] = int(duration)
     
     activity_data = sorted(activity_data.items(), key=lambda x: x[1], reverse=True)
     activity_data = activity_data[:10]
@@ -130,6 +138,40 @@ def oxygen_plot(data):
 
     # Pass the plot path to the template
     context = {'oxygen_data_json': oxygen_data}
+    return context
+
+def glucose_plot(data):
+    print("inside blood glucose function\n")
+    oxygen_data=[]
+    for record in data['bucket']:
+        if len(record['dataset'][0]['point'])==0:
+            continue
+        else:
+            d={}
+            d['start']=parse_millis(record['startTimeMillis'])
+            d['end']=parse_millis(record['endTimeMillis'])
+            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            oxygen_data.append(d)
+
+    # Pass the plot path to the template
+    context = {'glucose_data_json': oxygen_data}
+    return context
+
+def pressure_plot(data):
+    print("inside blood pressure function\n")
+    oxygen_data=[]
+    for record in data['bucket']:
+        if len(record['dataset'][0]['point'])==0:
+            continue
+        else:
+            d={}
+            d['start']=parse_millis(record['startTimeMillis'])
+            d['end']=parse_millis(record['endTimeMillis'])
+            d['count']=int(record['dataset'][0]['point'][0]['value'][0]['fpVal'])
+            oxygen_data.append(d)
+
+    # Pass the plot path to the template
+    context = {'pressure_data_json': oxygen_data}
     return context
 
 async def fetch_metric_data(service, metric, total_data, duration, frequency):
@@ -157,12 +199,15 @@ async def fetch_metric_data(service, metric, total_data, duration, frequency):
     print(start_time.timestamp())
     print(end_time.timestamp())
     
-    start_date = start_time.strftime('%Y-%m-%d')
-    end_date = end_time.strftime('%Y-%m-%d')
+    start_date = start_time.astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    end_date = end_time.astimezone(pytz.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    print(start_date)
+    print(end_date)
     
     if metric == "sleep":
-        data = service.users().sessions().list(userId='me', activityType=72, startTime=f'{start_date}T00:00:00.000Z', endTime=f'{end_date}T23:59:59.999Z').execute()
-    
+        data = service.users().sessions().list(userId='me', activityType=72, startTime=f'{start_date}', endTime=f'{end_date}').execute()
+    elif metric == "activity":
+        data = service.users().sessions().list(userId='me', startTime=f'{start_date}', endTime=f'{end_date}').execute()
     else:        
         data = service.users().dataset().aggregate(userId='me', body={
             "aggregateBy": [{
@@ -191,29 +236,71 @@ async def fetch_metric_data(service, metric, total_data, duration, frequency):
     elif metric=="oxygen":
         context=oxygen_plot(data)
         total_data['oxygen']=context
+    elif metric=="glucose":
+        context=glucose_plot(data)
+        total_data['glucose']=context
+    elif metric=="pressure":
+        context=pressure_plot(data)
+        total_data['pressure']=context
 
 @sync_to_async
 def get_credentials(request):
     if "credentials" in request.session:
         credentials = Credentials(**request.session["credentials"])
-        return credentials
+        return credentials, request.user.username
     
     return None
 
+@sync_to_async
+def get_sleep_scores(total_data, email):
+    sleep_body = ""
+    for sleep_data in total_data["sleep"]["sleep_data_json"]:
+        duration = sleep_data['count']
+        user = User.objects.get(email=email)
+        age=26
+        activity_level=70
+        given_date = datetime.datetime.strptime(sleep_data['start'], '%b %d, %I %p')
+        nearest_hr = min(total_data['restingHeartRate']['resting_heart_data_json'], key=lambda x: abs(datetime.datetime.strptime(x['start'], '%b %d, %I %p') - given_date))
+        heart_rate=nearest_hr['count']
+        
+        nearest_steps = min(total_data['steps']['steps_data_json'], key=lambda x: abs(datetime.datetime.strptime(x['start'], '%b %d, %I %p') - given_date))
+        daily_steps=nearest_steps['count']
+        
+        gender_female=(user.sex == "female")
+        gender_male=(user.sex == "male")
+        
+        sleep_body += f"{age},{duration},{activity_level},{heart_rate},{daily_steps},{gender_female},{gender_male},{True},{True},{False},{False},{False},{False}\n"
+    
+    if sleep_body and sleep_body[-1] == '\n':
+        sleep_body = sleep_body[:-1]
+        
+    url = "https://2pfeath3sg.execute-api.us-east-1.amazonaws.com/dev/inference"
+    
+    response = requests.post(url, json=sleep_body)
+    sleep_score = response.text.split(":")[1][:-1].strip()
+    sleep_score = ast.literal_eval(sleep_score)
+    
+    for i, sleep_data in enumerate(total_data["sleep"]["sleep_data_json"]):
+        sleep_data["count"] = sleep_score[i]
+    
+    return total_data
+
 async def fetch_all_metric_data(request, duration, frequency):
     total_data = {}
-    credentials = await get_credentials(request)
+    credentials, email = await get_credentials(request)
     if credentials:
-        try:
-            service = build('fitness', 'v1', credentials=credentials)
-            tasks = []
-            for metric in dataTypes.keys():
-                tasks.append(fetch_metric_data(service, metric, total_data, duration, frequency))
-            
-            await asyncio.gather(*tasks)
-        except Exception as e:
-            print(e)
-            total_data = {}
+        # try:
+        service = build('fitness', 'v1', credentials=credentials)
+        tasks = []
+        for metric in dataTypes.keys():
+            tasks.append(fetch_metric_data(service, metric, total_data, duration, frequency))
+        
+        await asyncio.gather(*tasks)
+        total_data = await get_sleep_scores(total_data, email)
+                 
+        # except Exception as e:
+        #     print(e)
+        #     total_data = {}
     
     else:
         print("Not signed in Google")
@@ -235,16 +322,12 @@ async def get_metric_data(request):
     total_data = await fetch_all_metric_data(request, duration, frequency)
     
     context = {'data': total_data}
-    print(total_data)
     return render(request, 'metrics/display_metric_data.html', context)
 
 def health_data_view(request):
     dynamodb = get_dynamodb_resource()
     table = dynamodb.Table('Django')
-
-    if request.user.is_authenticated:
-        print(request.user.id)
-    default_email = "test@example.com"
+    default_email = request.user.username
 
     if request.method == 'POST':
         data = request.POST

@@ -61,14 +61,15 @@
             </div>
 
             <!-- name display part -->
-            <div class="name-display container">
+            <div class="name-display container" style="display: flex; justify-content: space-between;align-items: baseline;">
                 <span>{{login_user.name}}</span>
+                <button class='btn btn-success' style="height"><a href="{% url 'user:authorize_google_fit' %}" style="color: white;">Sign In using Google</a></button>
             </div>
 
             <!-- user info -->
             <form id="user-info-form" method="POST" action="{% url 'user:account' %}">
                 {% csrf_token %}
-                <div class="user-info">
+                <div class="user-info mx-5">
                     <div class="column">
                         <div class="row">
                             <div class="info-row">
@@ -93,8 +94,8 @@
 
                         <div class="row">
                             <div class="info-row">
-                                <label class="info-label">Zip</label>
-                                <input type="text" name="zip" class="info-field" disabled value="{{ login_user.zip }}">
+                                <label class="info-label">City</label>
+                                <input type="text" name="city" class="info-field" disabled value="{{ login_user.city }}">
                             </div>
 
                             <div class="info-row">
@@ -107,61 +108,14 @@
                             </div>
 
                             <div class="info-row">
-                                <label class="info-label">Borough</label>
-                                <select class="info-field" id="boroughSelect" name="borough" disabled>
-                                    <option value="BKN">Brooklyn</option>
-                                    <option value="MHT">Manhattan</option>
-                                    <option value="QNS">Queens</option>
-                                    <option value="BRX">Bronx</option>
-                                    <option value="SND">Staten Island</option>
-                                </select>
+                                <label class="info-label">City</label>
+                                <input type="text" name="city" class="info-field" disabled value="{{ login_user.city }}">
                             </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="info-row-2">
-                                <label class="info-label">Address</label>
-                                <input type="text" name="address" class="info-field" disabled
-                                    value="{{ login_user.address }}">
-                            </div>
-                            {% if userType == "patient" %}
-                            <div class="info-row-2">
-                                <label class="info-label">Insurance Provider</label>
-                                <input type="text" name="insurance" class="info-field" disabled
-                                    value="{{ login_user.insurance_provider }}">
-                            </div>
-                            {% elif userType == "doctor" %}
-                            <div class="info-row-2">
-                                <label class="info-label">Medical Specialization</label>
-                                <input type="text" name="specialization" class="info-field" disabled
-                                    value="{{ login_user.primary_speciality }}">
-                            </div>
-                            {% endif %}
-                            {% if userType != "patient" %}
-                            <div class="info-row-2">
-                                <label class="info-label">
-                                    {% if login_user.active_status == False %}Requested {% else %}Associated {% endif %}
-                                    Hospital
-                                </label>
-                                <input type="text" id="associatedHospital" name="associatedHospital" class="info-field"
-                                    disabled value="{{ login_user.associated_hospital.name }}">
-                                <input type="hidden" id="selectedId" name="hospital"
-                                    value="{{ login_user.associated_hospital.id }}">
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
 
-
-                <!-- edit button -->
-                <div class="buttons">
-                    <button class="edit-btn">Edit</button>
-                    <button type="submit" class="save-btn" id="saveButton" disabled>Save</button>
-                </div>
             </form>
-
-            <a href="{% url 'user:authorize_google_fit' %}">Sign In using Google</a>
         </div>
 </body>
 

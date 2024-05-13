@@ -323,4 +323,5 @@ def callback_google_fit(request):
     return redirect(reverse("metrics:get_metric_data"))
 
 def account_page(request):
-    return render(request, 'user/account.html')
+    user = User.objects.get(email=request.user.username)
+    return render(request, 'user/account.html', {'login_user': user})

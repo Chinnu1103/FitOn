@@ -9,6 +9,7 @@
 </head>
 <body>
     {% include "user/navbar.html" %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="{% static 'exercise/css/exerciseListStyle.css' %}">
 
     <div class="container-fluid mx-0">
@@ -116,6 +117,56 @@
                 </div>
 
                 <div id="display_ex_container" class="container-fluid">
+                    {% for exercise, img in recommended_exercises %}
+                        {% if forloop.first or forloop.index0|divisibleby:2 %}
+                            <div class="exercise-card-row">
+                        {% endif %}
+
+                        <div class="exercise-card mx-2 recommended">
+                            <div class="p-1" style="display: flex; flex-direction: column;">
+                                <img src="{{ img.url_0 }}" alt="{{ exercise.name }}">
+                                <img class="mt-1" src="{{ img.url_1 }}" alt="{{ exercise.name }}">
+                            </div>
+                            <div class="exercise-details ml-3 row">
+                                <h3 class="mb-4 container-fluid my-0" style="padding-right: 120px;"><strong>{{ exercise.name }}</strong></h3>
+                                <div class="col-6">
+                                    <p><strong>Level:</strong> {{ exercise.level }}</p>
+                                    <p><strong>Equipment:</strong> {{ exercise.equipment }}</p>
+                                    <p><strong>Primary Muscles:</strong> 
+                                        {% for muscle in exercise.primaryMuscles.all %}
+                                            {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                </div>
+                                <div class="col-6">
+                                    <p><strong>Secondary Muscles:</strong> 
+                                        {% for muscle in exercise.secondaryMuscles.all %}
+                                            {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div style="position: relative;">
+                                <button class="add_to_selected"
+                                    data-id="{{ exercise.id }}"
+                                    data-instructions="{{ exercise.instructions }}"
+                                    data-name="{{ exercise.name }}"
+                                    data-equipment="{{ exercise.equipment }}"
+                                    data-level="{{ exercise.level }}"
+                                    data-primary="{% for muscle in exercise.primaryMuscles.all %}
+                                                    {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                                {% endfor %}"
+                                    data-secondary="{% for muscle in exercise.secondaryMuscles.all %}
+                                                {{ muscle.name }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}">
+                                    Add to selected</button>
+                            </div>
+                        </div>
+
+                        {% if forloop.last or forloop.index0|add:1|divisibleby:2 %}
+                            </div>
+                        {% endif %}
+                    {% endfor %}
                     {% for exercise, img in exercises %}
                         {% if forloop.first or forloop.index0|divisibleby:2 %}
                             <div class="exercise-card-row">
@@ -200,7 +251,7 @@
                 <button id="download_exercises">Download Exercise Plan</button>
                 <div id='selected_ex_container' class="mt-5">
                     {% for exercise in selected_exercises %}
-                        <div class="selected-card mx-2" data-id="{{ exercise.id }}" data-instructions="{{ exercise.instructions }}">
+                        <div class="selected-card mx-2" id='selected_exercise_{{ exercise.id }}' data-id="{{ exercise.id }}" data-instructions="{{ exercise.instructions }}">
                             <div class="exercise-details">
                                 <h3 class="mb-4"><strong>{{ exercise.name }}</strong></h3>
                                 <p><strong>Level:</strong> {{ exercise.level }}</p>

@@ -34,13 +34,24 @@ document.getElementById("data_drn").value = getQueryParam('data_drn') || "week";
 document.getElementById("data_freq").value = getQueryParam('data_freq') || "daily";
 handleDurationChange();
 
+function getRandomColors(count) {
+    const colors = [];
+    for (let i = 0; i < count; i++) {
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+        colors.push(`rgb(${r},${g},${b})`);
+    }
+    return colors;
+}
 
 let stepsData = total_data.steps.steps_data_json;
 let heartRateData = total_data.heartRate.heart_data_json;
 let restingHeartRateData = total_data.restingHeartRate.resting_heart_data_json;
 let sleepData = total_data.sleep.sleep_data_json;
-
-console.log(total_data.activity);
+let oxygenData = total_data.oxygen.oxygen_data_json;
+let glucoseData = total_data.glucose.glucose_data_json;
+let pressureData = total_data.pressure.pressure_data_json;
 
 // Extract dates and steps count
 let stepsDates = stepsData.map(entry => entry.start);
@@ -59,10 +70,21 @@ let restingHeartRateCount = restingHeartRateData.map(entry => entry.count);
 let sleepDates = sleepData.map(entry => entry.start);
 let sleepCount = sleepData.map(entry => entry.count);
 
+let oxygenDates = oxygenData.map(entry => entry.start);
+let oxygenCount = sleepData.map(entry => entry.count);
+
+let glucoseDates = glucoseData.map(entry => entry.start);
+let glucoseCount = glucoseData.map(entry => entry.count);
+
+let pressureDates = pressureData.map(entry => entry.start);
+let pressureCount = pressureData.map(entry => entry.count);
+
 // Get canvas elements
 const stepsCtx = document.getElementById('stepsChart').getContext('2d');
 const heartRateCtx = document.getElementById('heartRateChart').getContext('2d');
 const sleepCtx = document.getElementById('sleepChart').getContext('2d');
+const oxygenCtx = document.getElementById('oxygenChart').getContext('2d');
+const bodyFitnessCtx = document.getElementById('bodyFitnessChart').getContext('2d');
 
 // Create bar plot
 const stepsChart = new Chart(stepsCtx, {
@@ -163,8 +185,9 @@ const heartRateChart = new Chart(heartRateCtx, {
         }
     }
 });
+const randomColors = getRandomColors(sleepDates.length);
 const sleepChart = new Chart(sleepCtx, {
-    type: 'pie',
+    type: 'polarArea',
     data: {
         labels: sleepDates,
         datasets: [{
@@ -172,7 +195,7 @@ const sleepChart = new Chart(sleepCtx, {
             data: sleepCount,
             borderColor: '#990f02',
             borderWidth: 2,
-            backgroundColor: '#008000',
+            backgroundColor: randomColors,
             fill: true
         }]
     },
@@ -181,11 +204,47 @@ const sleepChart = new Chart(sleepCtx, {
         maintainAspectRatio:false,
         plugins: {
             legend: {
-            position: 'top',
+                display: false,
             }
         }
     }}
 );
+const oxygenChart = new Chart(oxygenCtx, {
+    type: 'bar',
+    data: {
+        labels: oxygenDates,
+        datasets: [{
+            label: 'Oxygen Saturation %',
+            data: oxygenCount,
+            backgroundColor: '#800080',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        maintainAspectRatio:true,
+        responsive: true,
+        scales: {
+            x: {
+                title: {
+                    display: false
+                },
+                ticks: {
+                    color: 'black'
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Oxygen Saturation',
+                    color:'black'
+                },
+                ticks: {
+                    color: 'black'
+                }
+            }
+        }
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function () {
     console.log("DOM fully loaded and parsed");
@@ -218,4 +277,54 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.style.display = "none";
         }
     };
+});
+const bodyFitnessChart = new Chart(bodyFitnessCtx, {
+    type: 'line',
+    data: {
+        labels: glucoseDates.concat(pressureDates),
+        datasets: [{
+            label: 'Blood Glucose',
+            data: glucoseCount,
+            borderColor: 'rgba(55, 173, 221, 1.0)',
+            backgroundColor: 'rgba(55, 173, 221, 0.6)',
+            borderWidth: 2,
+            fill: false
+        }, {
+            label: 'Blood Pressure',
+            data: pressureCount,
+            borderColor: 'rgba(55, 173, 221, 1.0)',
+            backgroundColor: 'rgba(55, 173, 221, 0.6)',
+            borderWidth: 2,
+            fill: false
+        }]
+    },
+    options: {
+        maintainAspectRatio:true,
+        responsive: true,
+        elements: {
+            line: {
+                tension: 0.000001
+            }
+        },
+        scales: {
+            x: {
+                title: {
+                    display: false
+                },
+                ticks: {
+                    color: 'black' 
+                }
+
+            },
+            y: {
+                title: {
+                    display: true,
+                    color:'black'
+                },
+                ticks: {
+                    color: 'black' 
+                }
+            }
+        }
+    }
 });

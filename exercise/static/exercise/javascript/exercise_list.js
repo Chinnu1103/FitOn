@@ -213,7 +213,41 @@ document.addEventListener("DOMContentLoaded", function() {
 
     document.getElementById("download_exercises").addEventListener("click", function() {
         downloadCSV();
+        var csrftoken = getCookie('csrftoken');
+        $.ajax({
+            url: '/exercise/store/',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({data_list: selectedExercises}),
+            beforeSend: function(xhr, settings) {
+                // Include CSRF token in request headers
+                xhr.setRequestHeader("X-CSRFToken", csrftoken);
+            },
+            success: function(response){
+                // Handle success response
+                console.log(response);
+            },
+            error: function(xhr, status, error){
+                console.error(error);
+            }
+        });
     })
+
+    function getCookie(name) {
+        var cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            var cookies = document.cookie.split(';');
+            for (var i = 0; i < cookies.length; i++) {
+                var cookie = cookies[i].trim();
+                // Check if cookie name matches csrfmiddlewaretoken
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
 
 });
 

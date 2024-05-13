@@ -298,3 +298,7 @@ legend {
 .exercise-details h3 {
   margin-top: 0;
 }
+
+.recommended {
+  border: gold 5px solid !important;
+}

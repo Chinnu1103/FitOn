@@ -15,11 +15,10 @@
     body, html {
         margin: 0;
         padding: 0;
-        color: white; /* Set text color to white */
-        font-family: 'Arial', sans-serif; /* Set font family to Arial */
+        color: #ffffff;
+        font-family: 'Arial', sans-serif;
     }
-
-
+    
     /* Floating Button Style */
     #addDataButton {
         position: fixed;
@@ -28,7 +27,7 @@
         z-index: 9999;
         font-size: 24px;
         background-color: #007BFF;
-        color: white;
+        color: #ffffff;
         border: none;
         border-radius: 50%;
         width: 60px;
@@ -37,7 +36,7 @@
         line-height: 60px;
         cursor: pointer;
     }
-
+    
     /* Modal styles */
     .modal {
         display: none;
@@ -48,27 +47,29 @@
         width: 100%;
         height: 100%;
         overflow: auto;
-        background-color: rgba(0,0,0,0.4);
+        background-color: rgba(0, 0, 0, 0.4);
     }
-
+    
     .modal-content {
         background-color: #fefefe;
         margin: 15% auto;
+        width: 50% !important;
         padding: 20px;
         border: 1px solid #888;
-        width: 80%;
     }
-
+    
     .close {
-        color: #aaa;
+        color: #aaaaaa;
         float: right;
+        text-align: end;
         font-size: 28px;
         font-weight: bold;
+        transition: color 0.3s ease;
     }
-
+    
     .close:hover,
     .close:focus {
-        color: black;
+        color: #000000;
         text-decoration: none;
         cursor: pointer;
     }
@@ -93,21 +94,25 @@
             <form method="post" action="{% url 'metrics:submit_health_data' %}">
                 {% csrf_token %}
                 <label for="metric">Metric:</label>
-                <select name="metric" id="metric">
+                <select name="metric" id="metric" class="my-1">
                     <option value="heart_rate">Heart Rate</option>
-                    <option value="oxygen_spo2">Oxygen - SpO2</option>
+                    <option value="oxygen">Oxygen Saturation</option>
                     <option value="steps">Steps</option>
                     <option value="resting_heart_rate">Resting Heart Rate</option>
                     <option value="sleep">Sleep</option>
-                    <option value="exercise">Exercises</option>
-                    <option value="stress">Stress</option>
+                    <option value="activity">Exercises</option>
+                    <option value="glucose">Blood Glucose</option>
+                    <option value="pressure">Blood Pressure</option>
                     <!-- Add other metrics options as needed -->
                 </select>
+                <br>
                 <label for="time">Time:</label>
-                <input type="datetime-local" name="time" required>
+                <input type="datetime-local" name="time" required class="my-1">
+                <br>
                 <label for="value">Value:</label>
-                <input type="number" name="value" required>
-                <input type="submit" value="Save">
+                <input type="number" name="value" required class="my-1">
+                <br>
+                <input type="submit" value="Save" class="btn btn-primary mt-5">
             </form>
         </div>
 
@@ -181,11 +186,13 @@
             </div>
             <div class="col-md-6">
                 <h2>Body Fitness</h2>
+                <canvas id="bodyFitnessChart"></canvas>
             </div>
         </div>
         <div class="row my-5">
             <div class="col-md-6">
                 <h2>Blood Oxygen Levels</h2>
+                <canvas id="oxygenChart"></canvas>
             </div>
             <div class="col-md-6">
                 <h2>Top Activities</h2>
