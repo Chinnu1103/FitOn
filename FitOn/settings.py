@@ -24,9 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-@y1qhh9hpgn5a9zjtslz8%au^cs8--2-m2zxz1%w2f5tug)30="
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ["fiton-dev.eba-keqgfz2g.us-east-1.elasticbeanstalk.com", "127.0.0.1"]
+ALLOWED_HOSTS = ["fiton-prod.eba-ytjhvvmm.us-west-2.elasticbeanstalk.com", "127.0.0.1"]
 
 
 # Application definition
