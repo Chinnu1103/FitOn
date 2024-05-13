@@ -14,18 +14,18 @@ import ast
 import pytz
 import boto3
 from django.conf import settings
-from aws_conf import get_dynamodb_resource
+# from aws_conf import get_dynamodb_resource
 from collections import defaultdict
 
-# def get_dynamodb_resource():
-#     id = settings.DYNAMO_ID
-#     key = settings.DYNAMO_KEY
-#     return boto3.resource(
-#         'dynamodb',
-#         region_name='us-east-2',
-#         aws_access_key_id=id,
-#         aws_secret_access_key=key
-#     )
+def get_dynamodb_resource():
+    id = settings.DYNAMO_ID
+    key = settings.DYNAMO_KEY
+    return boto3.resource(
+        'dynamodb',
+        region_name='us-east-2',
+        aws_access_key_id=id,
+        aws_secret_access_key=key
+    )
 
 dataTypes = {
     "heart_rate": "com.google.heart_rate.bpm",
